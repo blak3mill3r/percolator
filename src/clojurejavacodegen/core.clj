@@ -78,8 +78,8 @@
                                QualifiedNameExpr                ; done-ish with the /-in-a-symbol syntax
                                SingleMemberAnnotationExpr 
                                StringLiteralExpr                ; done
-                               SuperExpr 
-                               ThisExpr
+                               SuperExpr                        ; done
+                               ThisExpr                         ; done
                                UnaryExpr
                                VariableDeclarationExpr
                                ))
@@ -199,6 +199,7 @@
       '(quote >>>= ) interpret-expression-assignment-operation
      ; miscellaneous expression
       '(quote super) interpret-expression-super
+      '(quote this)  interpret-expression-this
     } (first list)
     eval-and-interpret ; default
     ) list))
@@ -249,9 +250,11 @@
     '(quote >>>= ) 'AssignExpr$Operator/rUnsignedShift
   })
 
+(defn interpret-expression-this [form] `(new ThisExpr))
+
 (defn interpret-expression-super [form]
   (if (= 2 (count form))
-    `(new SuperExpr ~(interpret-expression (nth form 1)))
+    `(new SuperExpr ~(interpret-expression (nth form 1))) ; e.g. SomeClass.this (use case: this in anonymous class referring to the enclosing class)
     `(new SuperExpr)
     ))
 
@@ -377,6 +380,6 @@
   ( '== x false )
   ( '== x \f )
   ( '== x 3.1415 )
-  ( 'super 3.14)
-  
+  ( 'super )
+  ('this)
   )
