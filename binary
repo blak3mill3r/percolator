@@ -1,0 +1,49 @@
+japaparser/ast/expr/BinaryExpr.java:30:public final class BinaryExpr extends Expression {
+japaparser/ast/expr/BinaryExpr.java:60:    public BinaryExpr() {
+japaparser/ast/expr/BinaryExpr.java:63:    public BinaryExpr(Expression left, Expression right, Operator op) {
+japaparser/ast/expr/BinaryExpr.java:69:    public BinaryExpr(int beginLine, int beginColumn, int endLine, int endColumn, Expression left, Expression right, Operator op) {
+japaparser/ast/visitor/GenericVisitor.java:49:import japa.parser.ast.expr.BinaryExpr;
+japaparser/ast/visitor/GenericVisitor.java:177:    public R visit(BinaryExpr n, A arg);
+japaparser/ast/visitor/GenericVisitorAdapter.java:52:import japa.parser.ast.expr.BinaryExpr;
+japaparser/ast/visitor/GenericVisitorAdapter.java:189:    public R visit(BinaryExpr n, A arg) {
+japaparser/ast/visitor/EqualsVisitor.java:32:import japa.parser.ast.expr.BinaryExpr;
+japaparser/ast/visitor/EqualsVisitor.java:695:    public Boolean visit(BinaryExpr n1, Node arg) {
+japaparser/ast/visitor/EqualsVisitor.java:696:        BinaryExpr n2 = (BinaryExpr) arg;
+japaparser/ast/visitor/VoidVisitorAdapter.java:52:import japa.parser.ast.expr.BinaryExpr;
+japaparser/ast/visitor/VoidVisitorAdapter.java:182:    public void visit(BinaryExpr n, A arg) {
+japaparser/ast/visitor/DumpVisitor.java:53:import japa.parser.ast.expr.BinaryExpr;
+japaparser/ast/visitor/DumpVisitor.java:592:    public void visit(BinaryExpr n, Object arg) {
+japaparser/ast/visitor/VoidVisitor.java:49:import japa.parser.ast.expr.BinaryExpr;
+japaparser/ast/visitor/VoidVisitor.java:177:    public void visit(BinaryExpr n, A arg);
+japaparser/ast/visitor/ModifierVisitorAdapter.java:53:import japa.parser.ast.expr.BinaryExpr;
+japaparser/ast/visitor/ModifierVisitorAdapter.java:218:    public Node visit(BinaryExpr n, A arg) {
+japaparser/ASTParser.java:50:import japa.parser.ast.expr.BinaryExpr;
+japaparser/ASTParser.java:2173:            ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, BinaryExpr.Operator.or);
+japaparser/ASTParser.java:2198:            ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, BinaryExpr.Operator.and);
+japaparser/ASTParser.java:2223:            ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, BinaryExpr.Operator.binOr);
+japaparser/ASTParser.java:2248:            ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, BinaryExpr.Operator.xor);
+japaparser/ASTParser.java:2273:            ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, BinaryExpr.Operator.binAnd);
+japaparser/ASTParser.java:2286:        BinaryExpr.Operator op;
+japaparser/ASTParser.java:2301:                    op = BinaryExpr.Operator.equals;
+japaparser/ASTParser.java:2305:                    op = BinaryExpr.Operator.notEquals;
+japaparser/ASTParser.java:2313:            ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, op);
+japaparser/ASTParser.java:2348:        BinaryExpr.Operator op;
+japaparser/ASTParser.java:2365:                    op = BinaryExpr.Operator.less;
+japaparser/ASTParser.java:2369:                    op = BinaryExpr.Operator.greater;
+japaparser/ASTParser.java:2373:                    op = BinaryExpr.Operator.lessEquals;
+japaparser/ASTParser.java:2377:                    op = BinaryExpr.Operator.greaterEquals;
+japaparser/ASTParser.java:2385:            ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, op);
+japaparser/ASTParser.java:2398:        BinaryExpr.Operator op;
+japaparser/ASTParser.java:2409:                    op = BinaryExpr.Operator.lShift;
+japaparser/ASTParser.java:2415:                        op = BinaryExpr.Operator.rSignedShift;
+japaparser/ASTParser.java:2418:                        op = BinaryExpr.Operator.rUnsignedShift;
+japaparser/ASTParser.java:2425:            ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, op);
+japaparser/ASTParser.java:2438:        BinaryExpr.Operator op;
+japaparser/ASTParser.java:2453:                    op = BinaryExpr.Operator.plus;
+japaparser/ASTParser.java:2457:                    op = BinaryExpr.Operator.minus;
+japaparser/ASTParser.java:2465:            ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, op);
+japaparser/ASTParser.java:2478:        BinaryExpr.Operator op;
+japaparser/ASTParser.java:2494:                    op = BinaryExpr.Operator.times;
+japaparser/ASTParser.java:2498:                    op = BinaryExpr.Operator.divide;
+japaparser/ASTParser.java:2502:                    op = BinaryExpr.Operator.remainder;
+japaparser/ASTParser.java:2510:            ret = new BinaryExpr(ret.getBeginLine(), ret.getBeginColumn(), token.endLine, token.endColumn, ret, right, op);

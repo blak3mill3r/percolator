@@ -1,21 +1,95 @@
 (ns clojurejavacodegen.core
   (:use [clojure.contrib.string :as string]))
 
+;(import '(japa.parser ASTHelper)) ; we'll help ourselves
+
+; Various other bits of AST
 (import '(japa.parser.ast CompilationUnit))
 (import '(japa.parser.ast PackageDeclaration))
-(import '(japa.parser ASTHelper))
-(import '(japa.parser.ast.body ClassOrInterfaceDeclaration))
-(import '(japa.parser.ast.body ModifierSet))
-(import '(japa.parser.ast.body MethodDeclaration))
-(import '(japa.parser.ast.body Parameter))
-(import '(japa.parser.ast.stmt BlockStmt))
-(import '(japa.parser.ast.stmt ExpressionStmt))
-(import '(japa.parser.ast.stmt ReturnStmt))
-(import '(japa.parser.ast.expr NameExpr))
-(import '(japa.parser.ast.expr FieldAccessExpr))
-(import '(japa.parser.ast.expr MethodCallExpr))
-(import '(japa.parser.ast.expr StringLiteralExpr))
-(import '(japa.parser.ast.expr LongLiteralExpr))
+
+; Declarations and such
+(import '(japa.parser.ast.body AnnotationDeclaration 
+                               AnnotationMemberDeclaration 
+                               ClassOrInterfaceDeclaration 
+                               ConstructorDeclaration 
+                               EmptyMemberDeclaration 
+                               EmptyTypeDeclaration 
+                               EnumConstantDeclaration 
+                               EnumDeclaration 
+                               FieldDeclaration 
+                               InitializerDeclaration 
+                               MethodDeclaration
+                               TypeDeclaration ; I think this is an abstract base
+                               ModifierSet     ; that's like public and private and static and abstract and synchronized and final and all that shit
+                               Parameter       ; as in a method declaration
+                               ))
+
+; Statements
+(import '(japa.parser.ast.stmt AssertStmt 
+                               BlockStmt 
+                               BreakStmt 
+                               ContinueStmt 
+                               DoStmt 
+                               EmptyStmt 
+                               ExplicitConstructorInvocationStmt 
+                               ExpressionStmt
+                               ForeachStmt 
+                               ForStmt 
+                               IfStmt 
+                               LabeledStmt 
+                               ReturnStmt 
+                               SwitchEntryStmt 
+                               SwitchStmt 
+                               SynchronizedStmt 
+                               ThrowStmt 
+                               TryStmt 
+                               TypeDeclarationStmt 
+                               WhileStmt
+                               ))
+
+; Expressions
+(import '(japa.parser.ast.expr AnnotationExpr
+                               ArrayAccessExpr 
+                               ArrayCreationExpr 
+                               ArrayInitializerExpr 
+                               AssignExpr 
+                               BinaryExpr 
+                               BooleanLiteralExpr
+                               CastExpr 
+                               CharLiteralExpr 
+                               ClassExpr 
+                               ConditionalExpr 
+                               DoubleLiteralExpr 
+                               EnclosedExpr 
+                               FieldAccessExpr 
+                               InstanceOfExpr 
+                               IntegerLiteralExpr 
+                               IntegerLiteralMinValueExpr 
+                               LiteralExpr 
+                               LongLiteralExpr 
+                               LongLiteralMinValueExpr 
+                               MarkerAnnotationExpr 
+                               MethodCallExpr 
+                               NameExpr 
+                               NormalAnnotationExpr 
+                               NullLiteralExpr 
+                               ObjectCreationExpr 
+                               QualifiedNameExpr 
+                               SingleMemberAnnotationExpr 
+                               StringLiteralExpr 
+                               SuperExpr 
+                               ThisExpr
+                               UnaryExpr
+                               VariableDeclarationExpr
+                               ))
+
+; Types
+(import '( japa.parser.ast.type ClassOrInterfaceType 
+                                PrimitiveType         ; a degrading term
+                                ReferenceType 
+                                Type
+                                VoidType 
+                                WildcardType ))
 
 (defn spit-it-out [block-stmt]
   (let [ cu                (new CompilationUnit)
@@ -71,8 +145,13 @@
   `(new LongLiteralExpr (.toString ~long)))
 
 (defmethod interpret-expression clojure.lang.IPersistentList [list]
+  (({
+     '. interpret-expression-method-call
+     } (first list)) list))
+
+(defmethod interpret-expression clojure.lang.IPersistentList [list]
   (if (= '. (first list))
-    (interpret-statement list) ; wrong ...
+    (interpret-expression-method-call list) ; wrong ...
     (eval list)
     ))
 
@@ -84,11 +163,28 @@
     `(new NameExpr ~(.toString symbol))
     ))
 
+(defn interpret-expression-method-call [expr]
+  (let [ target        (nth expr 1)
+         function-name (nth expr 2)
+         arguments     (map interpret-expression (nthrest expr 3))
+       ]
+    `(doto
+       (new MethodCallExpr
+         ~(interpret-expression target)
+         ~(.toString function-name)
+         )
+       (.setArgs (doto (new java.util.ArrayList)
+;                   ~@(map #( .add (literal-string %) ) arguments)
+                   ~@(map #( cons '.add [%1] ) arguments)
+                   ))
+       )
+    ))
+
 (interpret-expression 'Balls/cow)
 (interpret-expression 'cow)
 (interpret-expression 23)
 (interpret-expression
-'(. System/out println "holy fuckin shit" 3)
+'(. cow moo "holy fuckin shit" 3)
   )
 
 ;; interpret-expression should be a multimethod
@@ -146,34 +242,25 @@
            '(:return (. foo amethod ) ) )
 
 (defmethod interpret-statement :default [expr]
-  (let [ target        (nth expr 1)
-         function-name (nth expr 2)
-         arguments     (map interpret-expression (nthrest expr 3))
-       ]
-    `(new ExpressionStmt (doto
-       (new MethodCallExpr
-         ~(interpret-expression target)
-         ~(.toString function-name)
-         )
-       (.setArgs (doto (new java.util.ArrayList)
-;                   ~@(map #( .add (literal-string %) ) arguments)
-                   ~@(map #( cons '.add [%1] ) arguments)
-                   ))
-       ))
-    ))
+  `(new ExpressionStmt ~(interpret-expression expr)))
+
 ; must be a cleaner way to do the above
 ; the map within the splicing unquote thingy
 ; don't get the backquote syntax here in the anonymous function
 ; maybe make it a named function but what would be the name (add-each?)
 
-(defmacro newkkk [& stmt-list]
-  `(spit-it-out
-       (doto (new BlockStmt)
-         (.setStmts (doto (new java.util.ArrayList)
-         ~@( map #(cons '.add [%1]) (map interpret-statement stmt-list) )))
-     )
-     )
+(defmacro vomit-block [& stmt-list]
+  `(spit-it-out ~(interpret-block stmt-list))
   )
+
+(defn interpret-block [stmt-list]
+  `(doto (new BlockStmt)
+    (.setStmts (doto (new java.util.ArrayList)
+    ~@(
+       map #(cons '.add [%1]) (map interpret-statement stmt-list)
+       )
+      ))
+     ) )
 
 (println (newkkk
 
