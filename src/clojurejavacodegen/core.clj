@@ -46,23 +46,22 @@
                                TypeDeclarationStmt 
                                WhileStmt
                                ))
-
 ; Expressions
 (import '(japa.parser.ast.expr AnnotationExpr
                                ArrayAccessExpr 
                                ArrayCreationExpr 
                                ArrayInitializerExpr 
-                               AssignExpr                      ; done
-                               AssignExpr$Operator             ; done
-                               BinaryExpr                      ; done
-                               BinaryExpr$Operator             ; done
-                               BooleanLiteralExpr              ; done
+                               AssignExpr                       ; done
+                               AssignExpr$Operator              ; done
+                               BinaryExpr                       ; done
+                               BinaryExpr$Operator              ; done
+                               BooleanLiteralExpr               ; done
                                CastExpr 
-                               CharLiteralExpr 
+                               CharLiteralExpr                  ; done
                                ClassExpr 
                                ConditionalExpr 
-                               DoubleLiteralExpr 
-                               EnclosedExpr 
+                               DoubleLiteralExpr                ; done
+                               EnclosedExpr                     ; wtf
                                FieldAccessExpr                  ; done-ish with special /-in-a-symbol syntax (only possible if target is a NameExpr)
                                InstanceOfExpr 
                                IntegerLiteralExpr               ; not possible everything is a long, no biggie
@@ -146,18 +145,13 @@
 (defmethod interpret-expression java.lang.Long [long]
   `(new LongLiteralExpr (.toString ~long)))
 
-(defmethod interpret-expression nil [a]
-  `( new NullLiteralExpr )
-  )
+(defmethod interpret-expression nil [a] `( new NullLiteralExpr ))
 
-(defmethod interpret-expression java.lang.Boolean [bool]
-  `(new BooleanLiteralExpr ~bool))
+(defmethod interpret-expression java.lang.Boolean [bool] `(new BooleanLiteralExpr ~bool))
+(defmethod interpret-expression java.lang.Character [char] `(new CharLiteralExpr ~(.toString char)))
+(defmethod interpret-expression java.lang.Double [double] `(new DoubleLiteralExpr ~(.toString double)))
 
-(class true)
-
-
-
-(interpret-expression )
+(interpret-expression \f)
 
 (defn eval-and-interpret [list]
   (interpret-expression (eval list)))
@@ -381,5 +375,7 @@
   ( '+= x 3 )
   ( '< x nil )
   ( '== x false )
+  ( '== x \f )
+  ( '== x 3.1415 )
   
   )
