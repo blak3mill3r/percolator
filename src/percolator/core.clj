@@ -1,7 +1,7 @@
 (ns percolator.core
-  (:use [clojure.contrib.string :as string]))
+  (:refer [clojure.contrib.string :as string]))
 
-;(import '(japa.parser ASTHelper)) ; we'll help ourselves
+(import '(japa.parser ASTHelper)) ; we'll help ourselves but VOID_TYPE is used
 
 ; Various other bits of AST
 (import '(japa.parser.ast CompilationUnit))
@@ -109,32 +109,6 @@
     (.toString cu)
     ))
 
-;(defn kkk [expr]
-;  (let [ ablock            (new BlockStmt)
-;         class-name-expr   (new NameExpr "System")
-;         field             (new FieldAccessExpr class-name-expr "out")
-;         call              (new MethodCallExpr field "println")
-;       ]
-;    (ASTHelper/addArgument call (new StringLiteralExpr "HELLO THERE"))
-;    (ASTHelper/addStmt ablock call)
-;    (spit-it-out ablock)))
-;
-;(defn kkk [expr]
-;  (spit-it-out
-;    (doto (new BlockStmt)
-;      (.setStmts (doto (new java.util.ArrayList)
-;                   (.add (new ExpressionStmt 
-;                           (new MethodCallExpr
-;                             (eval (name-and-field-symbol-to-java-expr 'Systom/fuck))
-;                             "println"
-;                           )
-;                              )))))))
-
-;; so ... this is limited to string literal arguments to functions
-;; which is less than ideal
-;; clojure literals -> java literals
-;; clojure lists beginning with . -> java expressions
-;;
 ; TODO smarter type inference
 ; and override syntax
 (defmulti interpret-expression class)
@@ -154,75 +128,6 @@
   (interpret-expression "DIDNT MATCH SYNTAX"))
   )
 
-; this is kinda the central point of definition of the syntax of this library
-; it associates first-elements of clojure forms
-; with functions which interpret those forms as various Java-AST-constructing macros
-; eval-and-interpret is the default...
-; the idea behind that is that it leaves open the possibility of clojure runtime code
-; calculating constants that end up as java literals
-; or other fun java-compile-time logic
-; the thing returned by the arbitrary clojure code you stuff in there
-; could be a literal but it could also be any other clojure form that is a
-; valid percolator syntax
-; ... which is badass
-(defmethod interpret-expression clojure.lang.IPersistentList [list]
-  (({ '(quote ==   ) interpret-expression-binary-operation
-      '(quote !=   ) interpret-expression-binary-operation
-      '(quote <=   ) interpret-expression-binary-operation
-      '(quote >=   ) interpret-expression-binary-operation
-      '(quote <    ) interpret-expression-binary-operation
-      '(quote >    ) interpret-expression-binary-operation
-      '(quote <<   ) interpret-expression-binary-operation
-      '(quote >>   ) interpret-expression-binary-operation
-      '(quote >>>  ) interpret-expression-binary-operation
-      '(quote +    ) interpret-expression-binary-operation
-      '(quote -    ) interpret-expression-binary-operation
-      '(quote *    ) interpret-expression-binary-operation
-      '(quote /    ) interpret-expression-binary-operation
-      '(quote %    ) interpret-expression-binary-operation
-      '(quote xor  ) interpret-expression-binary-operation ; xor has to be special because '^ pisses the reader off (room for improvement)
-      '(quote ||   ) interpret-expression-binary-operation
-      '(quote &&   ) interpret-expression-binary-operation
-      '(quote |    ) interpret-expression-binary-operation
-      '(quote &    ) interpret-expression-binary-operation
-     ; assignment expressions
-      '(quote =    ) interpret-expression-assignment-operation
-      '(quote +=   ) interpret-expression-assignment-operation
-      '(quote -=   ) interpret-expression-assignment-operation
-      '(quote *=   ) interpret-expression-assignment-operation
-      '(quote slash=   ) interpret-expression-assignment-operation
-      '(quote &=   ) interpret-expression-assignment-operation
-      '(quote |=   ) interpret-expression-assignment-operation
-      '(quote xor= ) interpret-expression-assignment-operation
-      '(quote %=   ) interpret-expression-assignment-operation
-      '(quote <<=  ) interpret-expression-assignment-operation
-      '(quote >>=  ) interpret-expression-assignment-operation
-      '(quote >>>= ) interpret-expression-assignment-operation
-     ; unary operation expressions
-      ;'(quote +           ) interpret-expression-unary-operation
-      ;'(quote -           ) interpret-expression-unary-operation   ; those forms are already in this map as binary expressions, see interpret-expression-binary-operation
-      '(quote ++          ) interpret-expression-unary-operation
-      '(quote --          ) interpret-expression-unary-operation
-      '(quote !           ) interpret-expression-unary-operation
-      '(quote bit-inverse ) interpret-expression-unary-operation
-      '(quote +++         ) interpret-expression-unary-operation
-      '(quote ---         ) interpret-expression-unary-operation
-     ; miscellaneous expression
-      '(quote super) interpret-expression-super
-      '(quote this)  interpret-expression-this
-    } (first list)
-    eval-and-interpret ; default
-    ) list))
-
-(defmethod interpret-expression clojure.lang.Symbol [symbol]
-  (if (re-find #"^\w*\/\w*$" (.toString symbol))
-    (let [ name-and-field (string/split #"/" (.toString symbol)) ]
-      `(new FieldAccessExpr (new NameExpr ~(first name-and-field)) ~(last name-and-field))
-      )
-    `(new NameExpr ~(.toString symbol))
-    ))
-
-(def k (keyword "%"))
 ; symbol aliases
 ; which resolves to an Operator constant from japaparser
 (def japaparser-operator-type
@@ -285,7 +190,7 @@
   (let [ operator (japaparser-operator-type-unary (nth expr 0))
          operand  (interpret-expression     (nth expr 1))
        ]
-    `(new BinaryExpr ~operand-l ~operand-r ~operator)
+    `(new UnaryExpr ~operand ~operator)
     ))
 
 ; there's a slight ambiguity problem with + and -
@@ -339,14 +244,83 @@
        )
     ))
 
+(defmethod interpret-expression clojure.lang.Symbol [symbol]
+  (if (re-find #"^\w*\/\w*$" (.toString symbol))
+    (let [ name-and-field (string/split #"/" (.toString symbol)) ]
+      `(new FieldAccessExpr (new NameExpr ~(first name-and-field)) ~(last name-and-field))
+      )
+    `(new NameExpr ~(.toString symbol))
+    ))
+
+
+; this is kinda the central point of definition of the syntax of this library
+; it associates first-elements of clojure forms
+; with functions which interpret those forms as various Java-AST-constructing macros
+; eval-and-interpret is the default...
+; the idea behind that is that it leaves open the possibility of clojure runtime code
+; calculating constants that end up as java literals
+; or other fun java-compile-time logic
+; the thing returned by the arbitrary clojure code you stuff in there
+; could be a literal but it could also be any other clojure form that is a
+; valid percolator syntax
+; ... which is badass
+(defmethod interpret-expression clojure.lang.IPersistentList [list]
+  (({ '(quote .    ) interpret-expression-method-call
+      '(quote ==   ) interpret-expression-binary-operation
+      '(quote !=   ) interpret-expression-binary-operation
+      '(quote <=   ) interpret-expression-binary-operation
+      '(quote >=   ) interpret-expression-binary-operation
+      '(quote <    ) interpret-expression-binary-operation
+      '(quote >    ) interpret-expression-binary-operation
+      '(quote <<   ) interpret-expression-binary-operation
+      '(quote >>   ) interpret-expression-binary-operation
+      '(quote >>>  ) interpret-expression-binary-operation
+      '(quote +    ) interpret-expression-ambiguous-binary-or-unary-operation
+      '(quote -    ) interpret-expression-ambiguous-binary-or-unary-operation
+      '(quote *    ) interpret-expression-binary-operation
+      '(quote /    ) interpret-expression-binary-operation
+      '(quote %    ) interpret-expression-binary-operation
+      '(quote xor  ) interpret-expression-binary-operation ; xor has to be special because '^ pisses the reader off (room for improvement)
+      '(quote ||   ) interpret-expression-binary-operation
+      '(quote &&   ) interpret-expression-binary-operation
+      '(quote |    ) interpret-expression-binary-operation
+      '(quote &    ) interpret-expression-binary-operation
+     ; assignment expressions
+      '(quote =    ) interpret-expression-assignment-operation
+      '(quote +=   ) interpret-expression-assignment-operation
+      '(quote -=   ) interpret-expression-assignment-operation
+      '(quote *=   ) interpret-expression-assignment-operation
+      '(quote slash=   ) interpret-expression-assignment-operation
+      '(quote &=   ) interpret-expression-assignment-operation
+      '(quote |=   ) interpret-expression-assignment-operation
+      '(quote xor= ) interpret-expression-assignment-operation
+      '(quote %=   ) interpret-expression-assignment-operation
+      '(quote <<=  ) interpret-expression-assignment-operation
+      '(quote >>=  ) interpret-expression-assignment-operation
+      '(quote >>>= ) interpret-expression-assignment-operation
+     ; unary operation expressions, except for those that are ambiguous (see above, they are + and -)
+      '(quote ++          ) interpret-expression-unary-operation
+      '(quote --          ) interpret-expression-unary-operation
+      '(quote !           ) interpret-expression-unary-operation
+      '(quote bit-inverse ) interpret-expression-unary-operation
+      '(quote +++         ) interpret-expression-unary-operation
+      '(quote ---         ) interpret-expression-unary-operation
+     ; miscellaneous expression
+      '(quote super) interpret-expression-super
+      '(quote this)  interpret-expression-this
+    } (first list)
+    eval-and-interpret ; default
+    ) list))
+
 (interpret-expression 'Balls/cow)
-(interpret-expression 'cow)
 (interpret-expression 23)
 (interpret-expression
-'(. cow moo "holy fuckin shit" 3)
+'('. cow moo "holy fuckin shit")
   )
+(interpret-expression
+  '( '. System/out println "yes" ))
 (interpret-expression '(+ 2 3))
-(interpret-expression '( :<= 1 2 ))
+(interpret-expression '( '<= 1 2 ))
 
 
 ;; interpret-expression should be a multimethod
@@ -358,33 +332,6 @@
 ;; that leaves arithmetic, control flow, class and interface definitions,
 ;; function definitions, type declarations, and probably other stuff I am
 ;; forgetting...
-
-; turn something like 'System/out
-; into
-; (new FieldAccessExpr (new NameExpr "System") "out")
-
-(defn name-and-field-symbol-to-java-expr [symbol]
-  (let [ name-and-field
-           (string/split #"/" (.toString symbol))
-         name
-           (first name-and-field)
-         field
-           (last name-and-field)
-        ]
-    `(new FieldAccessExpr (new NameExpr ~name) ~field)
-    ))
-
-(name-and-field-symbol-to-java-expr 'System/out)
-
-
-;name-and-field-symbol-to-java-expr needs to become a multimethod
-;with it's current behavior as the implementation for symbol
-;and any code that can represent a java expression object expression
-;should be able to be the target of a method call
-;
-;in fact, I think, name-and-field-symbol-to-java-expr
-;should be interpret-expression
-;and it's current behavior as an implementation of that for symbol
 
 ; this was called method-call-expr
 ; which is what it is
@@ -405,9 +352,6 @@
 (defmethod interpret-statement :default [expr]
   `(new ExpressionStmt ~(interpret-expression expr)))
 
-(defmacro vomit-block [& stmt-list]
-  `(println (spit-it-out ~(interpret-block stmt-list))))
-
 (defn interpret-block [stmt-list]
   `(doto (new BlockStmt)
     (.setStmts (doto (new java.util.ArrayList)
@@ -416,6 +360,10 @@
        )
       ))
      ) )
+
+(defmacro vomit-block [& stmt-list]
+  `(println (spit-it-out ~(interpret-block stmt-list))))
+
 ; not quite satisfied with the look of the above but it works
 
 ; Action!
@@ -429,5 +377,7 @@
   ( '== x \f )
   ( '== x 3.1415 )
   ( 'super )
-  ('this)
+  ( 'return ( 'this ))
+  ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
+  ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
   )
