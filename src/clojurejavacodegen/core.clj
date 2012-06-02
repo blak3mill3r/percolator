@@ -53,7 +53,7 @@
                                ArrayCreationExpr 
                                ArrayInitializerExpr 
                                AssignExpr 
-                               BinaryExpr 
+                               BinaryExpr                      ; done
                                BinaryExpr$Operator
                                BooleanLiteralExpr
                                CastExpr 
@@ -145,8 +145,17 @@
 (defmethod interpret-expression java.lang.Long [long]
   `(new LongLiteralExpr (.toString ~long)))
 
+(defmethod interpret-expression nil [a]
+  `( new StringLiteralExpr (.toString a) )
+  )
+
 (defn eval-and-interpret [list]
   (interpret-expression (eval list)))
+
+(comment for debugging
+(defn eval-and-interpret [list]
+  (interpret-expression "DIDNT MATCH SYNTAX"))
+  )
 
 ; this is kinda the central point of definition of the syntax of this library
 ; it associates first-elements of clojure forms
@@ -160,21 +169,20 @@
 ; valid clojurejavacodegen syntax
 ; ... which is badass
 (defmethod interpret-expression clojure.lang.IPersistentList [list]
-  (({ '.  interpret-expression-method-call
-      :==  interpret-expression-binary-operation
-      :!=  interpret-expression-binary-operation
-      :<=  interpret-expression-binary-operation
-      :>=  interpret-expression-binary-operation
-      :<   interpret-expression-binary-operation
-      :>   interpret-expression-binary-operation
-      :<<  interpret-expression-binary-operation
-      :>>  interpret-expression-binary-operation
-      :>>> interpret-expression-binary-operation
-      :+   interpret-expression-binary-operation
-      :-   interpret-expression-binary-operation
-      :*   interpret-expression-binary-operation
-      (keyword "/") interpret-expression-binary-operation
-      (keyword "%") interpret-expression-binary-operation
+  (({ '(quote == ) interpret-expression-binary-operation
+      '(quote != ) interpret-expression-binary-operation
+      '(quote <= ) interpret-expression-binary-operation
+      '(quote >= ) interpret-expression-binary-operation
+      '(quote <  ) interpret-expression-binary-operation
+      '(quote >  ) interpret-expression-binary-operation
+      '(quote << ) interpret-expression-binary-operation
+      '(quote >> ) interpret-expression-binary-operation
+      '(quote >>>) interpret-expression-binary-operation
+      '(quote +  ) interpret-expression-binary-operation
+      '(quote -  ) interpret-expression-binary-operation
+      '(quote *  ) interpret-expression-binary-operation
+      '(quote /  ) interpret-expression-binary-operation
+      '(quote %  ) interpret-expression-binary-operation
     } (first list)
     eval-and-interpret ; default
     ) list))
@@ -188,23 +196,23 @@
     ))
 
 (def k (keyword "%"))
-; given a keyword, returns a symbol
+; symbol aliases
 ; which resolves to an Operator constant from japaparser
 (def japaparser-operator-type
-  { :==  'BinaryExpr$Operator/equals
-    :!=  'BinaryExpr$Operator/notEquals
-    :<=  'BinaryExpr$Operator/lessEquals
-    :>=  'BinaryExpr$Operator/greaterEquals
-    :<   'BinaryExpr$Operator/less
-    :>   'BinaryExpr$Operator/greater
-    :<<  'BinaryExpr$Operator/lShift
-    :>>  'BinaryExpr$Operator/rSignedShift
-    :>>> 'BinaryExpr$Operator/rUnsignedShift
-    :+   'BinaryExpr$Operator/plus
-    :-   'BinaryExpr$Operator/minus
-    :*   'BinaryExpr$Operator/times
-    (keyword "/")   'BinaryExpr$Operator/divide
-    (keyword "%")  'BinaryExpr$Operator/remainder
+  { '(quote ==  ) 'BinaryExpr$Operator/equals
+    '(quote !=  ) 'BinaryExpr$Operator/notEquals
+    '(quote <=  ) 'BinaryExpr$Operator/lessEquals
+    '(quote >=  ) 'BinaryExpr$Operator/greaterEquals
+    '(quote <   ) 'BinaryExpr$Operator/less
+    '(quote >   ) 'BinaryExpr$Operator/greater
+    '(quote <<  ) 'BinaryExpr$Operator/lShift
+    '(quote >>  ) 'BinaryExpr$Operator/rSignedShift
+    '(quote >>> ) 'BinaryExpr$Operator/rUnsignedShift
+    '(quote +   ) 'BinaryExpr$Operator/plus
+    '(quote -   ) 'BinaryExpr$Operator/minus
+    '(quote *   ) 'BinaryExpr$Operator/times
+    '(quote /   ) 'BinaryExpr$Operator/divide
+    '(quote %   ) 'BinaryExpr$Operator/remainder
   })
 
 (defn interpret-expression-binary-operation [expr]
@@ -289,22 +297,14 @@
 ; needs to be a multimethod that can dispatch on what kind of statement syntax
 ; it is
 
-(defmulti interpret-statement first)
-(defmethod interpret-statement :return [expression]
+(defmulti interpret-statement first :default :default)
+(defmethod interpret-statement 'return [expression]
   `(new japa.parser.ast.stmt.ReturnStmt
         ~(interpret-expression (nth expression 1))
         ))
 
-(interpret-statement 
-           '(:return (. foo amethod ) ) )
-
 (defmethod interpret-statement :default [expr]
   `(new ExpressionStmt ~(interpret-expression expr)))
-
-; must be a cleaner way to do the above
-; the map within the splicing unquote thingy
-; don't get the backquote syntax here in the anonymous function
-; maybe make it a named function but what would be the name (add-each?)
 
 (defmacro vomit-block [& stmt-list]
   `(println (spit-it-out ~(interpret-block stmt-list))))
@@ -317,90 +317,10 @@
        )
       ))
      ) )
+; not quite satisfied with the look of the above but it works
 
 ; Action!
 (vomit-block
-  (. oof amethod 3 5 "woot")
-  (. oof amethod 3 5 "dong")
-  ( :== 1 2 )
-  ( :!= 1 2 )
-  ( :<= 1 2 )
-  ( :>>> 1 2 )
-  (:return (. foo amethod ) )
+  ( '< 1 2 )
   
   )
-
-(defmacro add-each [& forms]
-  (map #(cons '.add [%1]) forms))
-
-(add-each (new java.lang.String)(new java.lang.String))
-
-  (interpret-statement '(. System/out println "foo"))
-
-(println (kkk
-
-           '(
-             .
-             (. oof amethod 3 5 "woot")
-             println
-             "holy fuckin shit"
-             3
-             )
-           
-           ))
-; that is fucking awesome
-; suddenly method call expressions
-; can be the targets of method call expressions
-; how can this concept be extended
-; to express arithmetic expressions
-; return expressions
-; conditionals
-; loops
-; assignments
-; array accesses
-; all the other crap in java expressions
-; ?
-;
-; return expressions:
-(:return something)
-; if a list begins with return it's a return expression
-; seems reasonable...
-
-; conditionals
-(if )
-; now there's a problem, it conflicts with clojure
-; hmmmmmm
-; how about using Keywords instead?
-(:return something)
-(:if condition then-block else-block?)
-; that seems solid...
-
-; shove this into the interpret-expression dispatcher
-; also, symbols without a / should be ... variable references
-(if (re-find #"^\w*\/\w*$" "System/out") :true :false)
-(string/split #"/" "System/out")
-
-(ancestors (class '(:fuck :me)))
-
-; or equivalently
-(.. System/out (println "foo"))
-(macroexpand '(.. System/out (println "foo")))
-
-; learning about macros...
-(defmacro arealmacro [fn-name args & body]
-  `(defn ~fn-name ~args
-     ~@body))
-
-(defn somethinglikeamacro [fn-name args & body]
-  `(defn ~fn-name ~args
-     ~@body))
-
-(eval
-  (somethinglikeamacro 'balls ['dung] '())
-  )
-(arealmacro balls[dung] ())
-
-(macroexpand '(. System/out println "foo"))
-(macroexpand '(.println System/out "foo"))
-
-
