@@ -169,23 +169,30 @@
 ; valid clojurejavacodegen syntax
 ; ... which is badass
 (defmethod interpret-expression clojure.lang.IPersistentList [list]
-  (({ '(quote == ) interpret-expression-binary-operation
-      '(quote != ) interpret-expression-binary-operation
-      '(quote <= ) interpret-expression-binary-operation
-      '(quote >= ) interpret-expression-binary-operation
-      '(quote <  ) interpret-expression-binary-operation
-      '(quote >  ) interpret-expression-binary-operation
-      '(quote << ) interpret-expression-binary-operation
-      '(quote >> ) interpret-expression-binary-operation
-      '(quote >>>) interpret-expression-binary-operation
-      '(quote +  ) interpret-expression-binary-operation
-      '(quote -  ) interpret-expression-binary-operation
-      '(quote *  ) interpret-expression-binary-operation
-      '(quote /  ) interpret-expression-binary-operation
-      '(quote %  ) interpret-expression-binary-operation
+  (({ '(quote ==   ) interpret-expression-binary-operation
+      '(quote !=   ) interpret-expression-binary-operation
+      '(quote <=   ) interpret-expression-binary-operation
+      '(quote >=   ) interpret-expression-binary-operation
+      '(quote <    ) interpret-expression-binary-operation
+      '(quote >    ) interpret-expression-binary-operation
+      '(quote <<   ) interpret-expression-binary-operation
+      '(quote >>   ) interpret-expression-binary-operation
+      '(quote >>>  ) interpret-expression-binary-operation
+      '(quote +    ) interpret-expression-binary-operation
+      '(quote -    ) interpret-expression-binary-operation
+      '(quote *    ) interpret-expression-binary-operation
+      '(quote /    ) interpret-expression-binary-operation
+      '(quote %    ) interpret-expression-binary-operation
+      '(quote xor  ) interpret-expression-binary-operation ; xor has to be special because '^ pisses the reader off (room for improvement)
+      '(quote ||   ) interpret-expression-binary-operation
+      '(quote &&   ) interpret-expression-binary-operation
+      '(quote |    ) interpret-expression-binary-operation
+      '(quote &    ) interpret-expression-binary-operation
     } (first list)
     eval-and-interpret ; default
     ) list))
+
+'&
 
 (defmethod interpret-expression clojure.lang.Symbol [symbol]
   (if (re-find #"^\w*\/\w*$" (.toString symbol))
@@ -199,20 +206,25 @@
 ; symbol aliases
 ; which resolves to an Operator constant from japaparser
 (def japaparser-operator-type
-  { '(quote ==  ) 'BinaryExpr$Operator/equals
-    '(quote !=  ) 'BinaryExpr$Operator/notEquals
-    '(quote <=  ) 'BinaryExpr$Operator/lessEquals
-    '(quote >=  ) 'BinaryExpr$Operator/greaterEquals
-    '(quote <   ) 'BinaryExpr$Operator/less
-    '(quote >   ) 'BinaryExpr$Operator/greater
-    '(quote <<  ) 'BinaryExpr$Operator/lShift
-    '(quote >>  ) 'BinaryExpr$Operator/rSignedShift
-    '(quote >>> ) 'BinaryExpr$Operator/rUnsignedShift
-    '(quote +   ) 'BinaryExpr$Operator/plus
-    '(quote -   ) 'BinaryExpr$Operator/minus
-    '(quote *   ) 'BinaryExpr$Operator/times
-    '(quote /   ) 'BinaryExpr$Operator/divide
-    '(quote %   ) 'BinaryExpr$Operator/remainder
+  { '(quote ==   ) 'BinaryExpr$Operator/equals
+    '(quote !=   ) 'BinaryExpr$Operator/notEquals
+    '(quote <=   ) 'BinaryExpr$Operator/lessEquals
+    '(quote >=   ) 'BinaryExpr$Operator/greaterEquals
+    '(quote <    ) 'BinaryExpr$Operator/less
+    '(quote >    ) 'BinaryExpr$Operator/greater
+    '(quote <<   ) 'BinaryExpr$Operator/lShift
+    '(quote >>   ) 'BinaryExpr$Operator/rSignedShift
+    '(quote >>>  ) 'BinaryExpr$Operator/rUnsignedShift
+    '(quote +    ) 'BinaryExpr$Operator/plus
+    '(quote -    ) 'BinaryExpr$Operator/minus
+    '(quote *    ) 'BinaryExpr$Operator/times
+    '(quote /    ) 'BinaryExpr$Operator/divide
+    '(quote %    ) 'BinaryExpr$Operator/remainder
+    '(quote xor  ) 'BinaryExpr$Operator/xor
+    '(quote ||   ) 'BinaryExpr$Operator/or
+    '(quote &&   ) 'BinaryExpr$Operator/and
+    '(quote |    ) 'BinaryExpr$Operator/binOr
+    '(quote &    ) 'BinaryExpr$Operator/binAnd
   })
 
 (defn interpret-expression-binary-operation [expr]
@@ -325,5 +337,6 @@
 (vomit-block
   ( '< 1 2 )
   ( 'return (+ 3 2))
+  ( 'xor 1 2 )
   
   )
