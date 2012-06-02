@@ -298,10 +298,12 @@
 ; it is
 
 (defmulti interpret-statement first :default :default)
-(defmethod interpret-statement 'return [expression]
-  `(new japa.parser.ast.stmt.ReturnStmt
-        ~(interpret-expression (nth expression 1))
-        ))
+(defmethod interpret-statement '(quote return) [expression]
+  (if (= (count expression) 2)
+    `(new japa.parser.ast.stmt.ReturnStmt
+       ~(interpret-expression (nth expression 1)))
+    `(new japa.parser.ast.stmt.ReturnStmt)
+    ))
 
 (defmethod interpret-statement :default [expr]
   `(new ExpressionStmt ~(interpret-expression expr)))
@@ -322,5 +324,6 @@
 ; Action!
 (vomit-block
   ( '< 1 2 )
+  ( 'return (+ 3 2))
   
   )
