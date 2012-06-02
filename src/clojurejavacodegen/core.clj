@@ -53,6 +53,7 @@
                                ArrayCreationExpr 
                                ArrayInitializerExpr 
                                AssignExpr 
+                               AssignExpr$Operator
                                BinaryExpr                      ; done
                                BinaryExpr$Operator
                                BooleanLiteralExpr
@@ -188,11 +189,22 @@
       '(quote &&   ) interpret-expression-binary-operation
       '(quote |    ) interpret-expression-binary-operation
       '(quote &    ) interpret-expression-binary-operation
+     ; assignment expressions
+      '(quote =    ) interpret-expression-assignment-operation
+      '(quote +=   ) interpret-expression-assignment-operation
+      '(quote -=   ) interpret-expression-assignment-operation
+      '(quote *=   ) interpret-expression-assignment-operation
+      '(quote slash=   ) interpret-expression-assignment-operation
+      '(quote &=   ) interpret-expression-assignment-operation
+      '(quote |=   ) interpret-expression-assignment-operation
+      '(quote xor= ) interpret-expression-assignment-operation
+      '(quote %=   ) interpret-expression-assignment-operation
+      '(quote <<=  ) interpret-expression-assignment-operation
+      '(quote >>=  ) interpret-expression-assignment-operation
+      '(quote >>>= ) interpret-expression-assignment-operation
     } (first list)
     eval-and-interpret ; default
     ) list))
-
-'&
 
 (defmethod interpret-expression clojure.lang.Symbol [symbol]
   (if (re-find #"^\w*\/\w*$" (.toString symbol))
@@ -225,6 +237,19 @@
     '(quote &&   ) 'BinaryExpr$Operator/and
     '(quote |    ) 'BinaryExpr$Operator/binOr
     '(quote &    ) 'BinaryExpr$Operator/binAnd
+   ; assignment operators
+    '(quote =    ) 'AssignExpr$Operator/assign
+    '(quote +=   ) 'AssignExpr$Operator/plus
+    '(quote -=   ) 'AssignExpr$Operator/minus
+    '(quote *=   ) 'AssignExpr$Operator/star
+    '(quote slash= ) 'AssignExpr$Operator/slash  ; irritating, reader pissed at '\= (  but not at '\  )
+    '(quote &=   ) 'AssignExpr$Operator/and
+    '(quote |=   ) 'AssignExpr$Operator/or
+    '(quote xor= ) 'AssignExpr$Operator/xor
+    '(quote %=   ) 'AssignExpr$Operator/rem
+    '(quote <<=  ) 'AssignExpr$Operator/lShift
+    '(quote >>=  ) 'AssignExpr$Operator/rSignedShift
+    '(quote >>>= ) 'AssignExpr$Operator/rUnsignedShift
   })
 
 (defn interpret-expression-binary-operation [expr]
@@ -232,10 +257,16 @@
          operand-l (interpret-expression     (nth expr 1))
          operand-r (interpret-expression     (nth expr 2))
         ]
-
     `(new BinaryExpr ~operand-l ~operand-r ~operator)
     ))
 
+(defn interpret-expression-assignment-operation [expr]
+  (let [ operator  (japaparser-operator-type (nth expr 0))
+         target    (interpret-expression     (nth expr 1))
+         value     (interpret-expression     (nth expr 2))
+        ]
+    `(new AssignExpr ~target ~value ~operator)
+    ))
 
 (defn interpret-expression-method-call [expr]
   (let [ target        (nth expr 1)
@@ -338,5 +369,7 @@
   ( '< 1 2 )
   ( 'return (+ 3 2))
   ( 'xor 1 2 )
+  ( '+= x 3 )
+  ( '< x 1 )
   
   )
