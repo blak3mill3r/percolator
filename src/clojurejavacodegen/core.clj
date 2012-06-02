@@ -58,8 +58,8 @@
                                BooleanLiteralExpr               ; done
                                CastExpr 
                                CharLiteralExpr                  ; done
-                               ClassExpr 
-                               ConditionalExpr 
+                               ClassExpr                        ; wtf
+                               ConditionalExpr                  ; aka ternary TODO do if statement first
                                DoubleLiteralExpr                ; done
                                EnclosedExpr                     ; wtf
                                FieldAccessExpr                  ; done-ish with special /-in-a-symbol syntax (only possible if target is a NameExpr)
@@ -72,12 +72,12 @@
                                MarkerAnnotationExpr 
                                MethodCallExpr                   ; done (anything missing?)
                                NameExpr                         ; done
-                               NormalAnnotationExpr 
+                               NormalAnnotationExpr             ; wtf
                                NullLiteralExpr                  ; done
-                               ObjectCreationExpr 
+                               ObjectCreationExpr               ; aka new TODO needs types
                                QualifiedNameExpr                ; done-ish with the /-in-a-symbol syntax
                                SingleMemberAnnotationExpr 
-                               StringLiteralExpr 
+                               StringLiteralExpr                ; done
                                SuperExpr 
                                ThisExpr
                                UnaryExpr
@@ -138,23 +138,15 @@
 ; and override syntax
 (defmulti interpret-expression class)
 
-(defmethod interpret-expression java.lang.String [string]
-  `(new StringLiteralExpr ~string))
+; clojure literals to java literals
+(defmethod interpret-expression java.lang.String    [string] `(new StringLiteralExpr ~string))
+(defmethod interpret-expression java.lang.Long      [long]   `(new LongLiteralExpr   ~(.toString long)))
+(defmethod interpret-expression java.lang.Boolean   [bool]   `(new BooleanLiteralExpr ~bool))
+(defmethod interpret-expression java.lang.Character [char]   `(new CharLiteralExpr   ~(.toString char)))
+(defmethod interpret-expression java.lang.Double    [double] `(new DoubleLiteralExpr ~(.toString double)))
+(defmethod interpret-expression nil                 [& a]    `(new NullLiteralExpr ))
 
-
-(defmethod interpret-expression java.lang.Long [long]
-  `(new LongLiteralExpr (.toString ~long)))
-
-(defmethod interpret-expression nil [a] `( new NullLiteralExpr ))
-
-(defmethod interpret-expression java.lang.Boolean [bool] `(new BooleanLiteralExpr ~bool))
-(defmethod interpret-expression java.lang.Character [char] `(new CharLiteralExpr ~(.toString char)))
-(defmethod interpret-expression java.lang.Double [double] `(new DoubleLiteralExpr ~(.toString double)))
-
-(interpret-expression \f)
-
-(defn eval-and-interpret [list]
-  (interpret-expression (eval list)))
+(defn eval-and-interpret [list] (interpret-expression (eval list)))
 
 (comment for debugging
 (defn eval-and-interpret [list]
@@ -205,6 +197,8 @@
       '(quote <<=  ) interpret-expression-assignment-operation
       '(quote >>=  ) interpret-expression-assignment-operation
       '(quote >>>= ) interpret-expression-assignment-operation
+     ; miscellaneous expression
+      '(quote super) interpret-expression-super
     } (first list)
     eval-and-interpret ; default
     ) list))
@@ -254,6 +248,12 @@
     '(quote >>=  ) 'AssignExpr$Operator/rSignedShift
     '(quote >>>= ) 'AssignExpr$Operator/rUnsignedShift
   })
+
+(defn interpret-expression-super [form]
+  (if (= 2 (count form))
+    `(new SuperExpr ~(interpret-expression (nth form 1)))
+    `(new SuperExpr)
+    ))
 
 (defn interpret-expression-binary-operation [expr]
   (let [ operator  (japaparser-operator-type (nth expr 0))
@@ -377,5 +377,6 @@
   ( '== x false )
   ( '== x \f )
   ( '== x 3.1415 )
+  ( 'super 3.14)
   
   )
