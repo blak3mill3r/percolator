@@ -307,8 +307,7 @@
 ; maybe make it a named function but what would be the name (add-each?)
 
 (defmacro vomit-block [& stmt-list]
-  `(spit-it-out ~(interpret-block stmt-list))
-  )
+  `(println (spit-it-out ~(interpret-block stmt-list))))
 
 (defn interpret-block [stmt-list]
   `(doto (new BlockStmt)
@@ -319,19 +318,17 @@
       ))
      ) )
 
-(println (newkkk
-
-             (. oof amethod 3 5 "woot")
-             (. oof amethod 3 5 "dong")
-           ( :== 1 2 )
-           ( :!= 1 2 )
-           ( :<= 1 2 )
-           ( :>>> 1 2 )
-           (:return (. foo amethod ) )
-           
-           )
-         )
-             (interpret-statement '(. oof amethod 3 5 "woot"))
+; Action!
+(vomit-block
+  (. oof amethod 3 5 "woot")
+  (. oof amethod 3 5 "dong")
+  ( :== 1 2 )
+  ( :!= 1 2 )
+  ( :<= 1 2 )
+  ( :>>> 1 2 )
+  (:return (. foo amethod ) )
+  
+  )
 
 (defmacro add-each [& forms]
   (map #(cons '.add [%1]) forms))
