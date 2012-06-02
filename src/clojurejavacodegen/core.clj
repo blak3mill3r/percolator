@@ -54,6 +54,7 @@
                                ArrayInitializerExpr 
                                AssignExpr 
                                BinaryExpr 
+                               BinaryExpr$Operator
                                BooleanLiteralExpr
                                CastExpr 
                                CharLiteralExpr 
@@ -144,16 +145,39 @@
 (defmethod interpret-expression java.lang.Long [long]
   `(new LongLiteralExpr (.toString ~long)))
 
-(defmethod interpret-expression clojure.lang.IPersistentList [list]
-  (({
-     '. interpret-expression-method-call
-     } (first list)) list))
+(defn eval-and-interpret [list]
+  (interpret-expression (eval list)))
 
+; this is kinda the central point of definition of the syntax of this library
+; it associates first-elements of clojure forms
+; with functions which interpret those forms as various Java-AST-constructing macros
+; eval-and-interpret is the default...
+; the idea behind that is that it leaves open the possibility of clojure runtime code
+; calculating constants that end up as java literals
+; or other fun java-compile-time logic
+; the thing returned by the arbitrary clojure code you stuff in there
+; could be a literal but it could also be any other clojure form that is a
+; valid clojurejavacodegen syntax
+; ... which is badass
 (defmethod interpret-expression clojure.lang.IPersistentList [list]
-  (if (= '. (first list))
-    (interpret-expression-method-call list) ; wrong ...
-    (eval list)
-    ))
+  (({ '.  interpret-expression-method-call
+      :==  interpret-expression-binary-operation
+      :!=  interpret-expression-binary-operation
+      :<=  interpret-expression-binary-operation
+      :>=  interpret-expression-binary-operation
+      :<   interpret-expression-binary-operation
+      :>   interpret-expression-binary-operation
+      :<<  interpret-expression-binary-operation
+      :>>  interpret-expression-binary-operation
+      :>>> interpret-expression-binary-operation
+      :+   interpret-expression-binary-operation
+      :-   interpret-expression-binary-operation
+      :*   interpret-expression-binary-operation
+      (keyword "/") interpret-expression-binary-operation
+      (keyword "%") interpret-expression-binary-operation
+    } (first list)
+    eval-and-interpret ; default
+    ) list))
 
 (defmethod interpret-expression clojure.lang.Symbol [symbol]
   (if (re-find #"^\w*\/\w*$" (.toString symbol))
@@ -162,6 +186,36 @@
       )
     `(new NameExpr ~(.toString symbol))
     ))
+
+(def k (keyword "%"))
+; given a keyword, returns a symbol
+; which resolves to an Operator constant from japaparser
+(def japaparser-operator-type
+  { :==  'BinaryExpr$Operator/equals
+    :!=  'BinaryExpr$Operator/notEquals
+    :<=  'BinaryExpr$Operator/lessEquals
+    :>=  'BinaryExpr$Operator/greaterEquals
+    :<   'BinaryExpr$Operator/less
+    :>   'BinaryExpr$Operator/greater
+    :<<  'BinaryExpr$Operator/lShift
+    :>>  'BinaryExpr$Operator/rSignedShift
+    :>>> 'BinaryExpr$Operator/rUnsignedShift
+    :+   'BinaryExpr$Operator/plus
+    :-   'BinaryExpr$Operator/minus
+    :*   'BinaryExpr$Operator/times
+    (keyword "/")   'BinaryExpr$Operator/divide
+    (keyword "%")  'BinaryExpr$Operator/remainder
+  })
+
+(defn interpret-expression-binary-operation [expr]
+  (let [ operator  (japaparser-operator-type (nth expr 0))
+         operand-l (interpret-expression     (nth expr 1))
+         operand-r (interpret-expression     (nth expr 2))
+        ]
+
+    `(new BinaryExpr ~operand-l ~operand-r ~operator)
+    ))
+
 
 (defn interpret-expression-method-call [expr]
   (let [ target        (nth expr 1)
@@ -186,6 +240,9 @@
 (interpret-expression
 '(. cow moo "holy fuckin shit" 3)
   )
+(interpret-expression '(+ 2 3))
+(interpret-expression '( :<= 1 2 ))
+
 
 ;; interpret-expression should be a multimethod
 ;; if it's any clojure literal turn it into a java literal expression object expression (yes that makes sense, not a mistype!)
@@ -266,6 +323,10 @@
 
              (. oof amethod 3 5 "woot")
              (. oof amethod 3 5 "dong")
+           ( :== 1 2 )
+           ( :!= 1 2 )
+           ( :<= 1 2 )
+           ( :>>> 1 2 )
            (:return (. foo amethod ) )
            
            )
