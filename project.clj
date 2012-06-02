@@ -1,4 +1,4 @@
-(defproject clojurejavacodegen "1.0.0-SNAPSHOT"
+(defproject percolator "1.0.0-SNAPSHOT"
   :description "for working with Java AST structures in Clojure"
   :dependencies [
                  [org.clojure/clojure "1.3.0"]

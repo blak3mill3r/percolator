@@ -1,4 +1,4 @@
-(ns clojurejavacodegen.core
+(ns percolator.core
   (:use [clojure.contrib.string :as string]))
 
 ;(import '(japa.parser ASTHelper)) ; we'll help ourselves
@@ -80,7 +80,8 @@
                                StringLiteralExpr                ; done
                                SuperExpr                        ; done
                                ThisExpr                         ; done
-                               UnaryExpr
+                               UnaryExpr                        ; FIXME TODO
+                               UnaryExpr$Operator               ; done
                                VariableDeclarationExpr
                                ))
 
@@ -98,7 +99,7 @@
          amethod           (new MethodDeclaration (ModifierSet/PUBLIC) (ASTHelper/VOID_TYPE) "main")
          param             (ASTHelper/createParameter (ASTHelper/createReferenceType "String" 0) "args")
        ]
-    (.setPackage cu (new PackageDeclaration (ASTHelper/createNameExpr "whatsys.clojurejavacodegen.test")))
+    (.setPackage cu (new PackageDeclaration (ASTHelper/createNameExpr "whatsys.percolator.test")))
     (ASTHelper/addTypeDeclaration cu atype)
     (.setModifiers amethod (ModifierSet/addModifier (.getModifiers amethod) (ModifierSet/STATIC)))
     (ASTHelper/addMember atype amethod)
@@ -162,7 +163,7 @@
 ; or other fun java-compile-time logic
 ; the thing returned by the arbitrary clojure code you stuff in there
 ; could be a literal but it could also be any other clojure form that is a
-; valid clojurejavacodegen syntax
+; valid percolator syntax
 ; ... which is badass
 (defmethod interpret-expression clojure.lang.IPersistentList [list]
   (({ '(quote ==   ) interpret-expression-binary-operation
@@ -197,6 +198,15 @@
       '(quote <<=  ) interpret-expression-assignment-operation
       '(quote >>=  ) interpret-expression-assignment-operation
       '(quote >>>= ) interpret-expression-assignment-operation
+     ; unary operation expressions
+      ;'(quote +           ) interpret-expression-unary-operation
+      ;'(quote -           ) interpret-expression-unary-operation   ; those forms are already in this map as binary expressions, see interpret-expression-binary-operation
+      '(quote ++          ) interpret-expression-unary-operation
+      '(quote --          ) interpret-expression-unary-operation
+      '(quote !           ) interpret-expression-unary-operation
+      '(quote bit-inverse ) interpret-expression-unary-operation
+      '(quote +++         ) interpret-expression-unary-operation
+      '(quote ---         ) interpret-expression-unary-operation
      ; miscellaneous expression
       '(quote super) interpret-expression-super
       '(quote this)  interpret-expression-this
@@ -250,6 +260,19 @@
     '(quote >>>= ) 'AssignExpr$Operator/rUnsignedShift
   })
 
+; has to be distinct from the above because the names collide
+; e.g. '- can be a unary negation or a subtraction
+(def japaparser-operator-type-unary
+  { '(quote +           ) 'UnaryExpr$Operator/positive
+    '(quote -           ) 'UnaryExpr$Operator/negative
+    '(quote ++          ) 'UnaryExpr$Operator/preIncrement
+    '(quote --          ) 'UnaryExpr$Operator/preDecrement
+    '(quote !           ) 'UnaryExpr$Operator/not
+    '(quote bit-inverse ) 'UnaryExpr$Operator/inverse          ; reader pissed about '~
+    '(quote +++         ) 'UnaryExpr$Operator/posIncrement     ; order dictates difference in java ... not going to go there
+    '(quote ---         ) 'UnaryExpr$Operator/posDecrement
+  })
+
 (defn interpret-expression-this [form] `(new ThisExpr))
 
 (defn interpret-expression-super [form]
@@ -258,11 +281,36 @@
     `(new SuperExpr)
     ))
 
+(defn interpret-expression-unary-operation [expr]
+  (let [ operator (japaparser-operator-type-unary (nth expr 0))
+         operand  (interpret-expression     (nth expr 1))
+       ]
+    `(new BinaryExpr ~operand-l ~operand-r ~operator)
+    ))
+
+; there's a slight ambiguity problem with + and -
+; they can be unary or binary
+; this function must decide which based on how many expressions it is given
+(defn interpret-expression-ambiguous-binary-or-unary-operation [expr]
+  (if (= 3 (count expr)) ; if it's a binary op
+    (let [ operator  (japaparser-operator-type (nth expr 0))
+           operand-l (interpret-expression     (nth expr 1))
+           operand-r (interpret-expression     (nth expr 2))
+         ]
+      `(new BinaryExpr ~operand-l ~operand-r ~operator)
+      )
+    ; otherwise it's unary
+    (let [ operator  (japaparser-operator-type-unary (nth expr 0))
+           operand   (interpret-expression           (nth expr 1))
+         ]
+      `(new UnaryExpr ~operand ~operator)
+      )))
+
 (defn interpret-expression-binary-operation [expr]
   (let [ operator  (japaparser-operator-type (nth expr 0))
          operand-l (interpret-expression     (nth expr 1))
          operand-r (interpret-expression     (nth expr 2))
-        ]
+       ]
     `(new BinaryExpr ~operand-l ~operand-r ~operator)
     ))
 
