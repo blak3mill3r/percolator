@@ -52,31 +52,31 @@
                                ArrayAccessExpr 
                                ArrayCreationExpr 
                                ArrayInitializerExpr 
-                               AssignExpr 
-                               AssignExpr$Operator
+                               AssignExpr                      ; done
+                               AssignExpr$Operator             ; done
                                BinaryExpr                      ; done
-                               BinaryExpr$Operator
-                               BooleanLiteralExpr
+                               BinaryExpr$Operator             ; done
+                               BooleanLiteralExpr              ; done
                                CastExpr 
                                CharLiteralExpr 
                                ClassExpr 
                                ConditionalExpr 
                                DoubleLiteralExpr 
                                EnclosedExpr 
-                               FieldAccessExpr 
+                               FieldAccessExpr                  ; done-ish with special /-in-a-symbol syntax (only possible if target is a NameExpr)
                                InstanceOfExpr 
-                               IntegerLiteralExpr 
-                               IntegerLiteralMinValueExpr 
-                               LiteralExpr 
-                               LongLiteralExpr 
-                               LongLiteralMinValueExpr 
+                               IntegerLiteralExpr               ; not possible everything is a long, no biggie
+                               IntegerLiteralMinValueExpr       ; wtf
+                               LiteralExpr                      ; abstract
+                               LongLiteralExpr                  ; done-ish ... better type inference from clojure primitives
+                               LongLiteralMinValueExpr          ; wtf
                                MarkerAnnotationExpr 
-                               MethodCallExpr 
-                               NameExpr 
+                               MethodCallExpr                   ; done (anything missing?)
+                               NameExpr                         ; done
                                NormalAnnotationExpr 
-                               NullLiteralExpr 
+                               NullLiteralExpr                  ; done
                                ObjectCreationExpr 
-                               QualifiedNameExpr 
+                               QualifiedNameExpr                ; done-ish with the /-in-a-symbol syntax
                                SingleMemberAnnotationExpr 
                                StringLiteralExpr 
                                SuperExpr 
@@ -147,8 +147,17 @@
   `(new LongLiteralExpr (.toString ~long)))
 
 (defmethod interpret-expression nil [a]
-  `( new StringLiteralExpr (.toString a) )
+  `( new NullLiteralExpr )
   )
+
+(defmethod interpret-expression java.lang.Boolean [bool]
+  `(new BooleanLiteralExpr ~bool))
+
+(class true)
+
+
+
+(interpret-expression )
 
 (defn eval-and-interpret [list]
   (interpret-expression (eval list)))
@@ -370,6 +379,7 @@
   ( 'return (+ 3 2))
   ( 'xor 1 2 )
   ( '+= x 3 )
-  ( '< x 1 )
+  ( '< x nil )
+  ( '== x false )
   
   )
