@@ -1,0 +1,72 @@
+macro goodness
+make it easy to express java syntax
+interpolating clojure variables as constants in java source and such
+
+(def-compilation-unit "foo.bar.baz.SomeClass")
+maybe ... but leave packages and compilation units and classes for last
+
+what about simple shit like defining a function or even just an expression?
+
+probably start with just expression level
+
+function foo(int x, int y = 2) {
+  return x + y;
+}
+
+(def-java-function
+  'foo'
+  [('int x) ('int y 2)]
+  (return (+ x y)))
+
+
+expressions would need to support
+arithmatic
+function calls (instance and static)
+precedence (preferably with minimal parenthesis in the generated code but not essential)
+the new operator
+
+
+so ... how do I want to express the expression
+System.out.println("HELLO THERE");
+
+it has a string literal which I want to represent as a clojure string literal
+method calls, expressed like clojure method calls
+by convention assume that symbols starting with capital letter represent java type literals
+and otherwise represent java name expressions
+
+like clojure calls or like the clojure-java-interop dot style?
+
+
+there's a difference between field-access and method-call which the programmer must express
+that expression is a NameExpr("System"), a FieldAccessExpr("out"), and a MethodCallExpr("println")
+
+(println
+  (spit-it-out
+    '(. (System/out) (println "foo"))
+    ))
+
+(. (System/out) (println "foo"))
+a call to the function println on the target System/out
+where System/out is a FieldAccessExpr
+
+
+so first convert all symbols
+if it has a / in it it is a FieldAccessExpr on a NameExpr
+
+
+map over the elements of the input list (looks kinda like java-interop clojure code but is actually a java-source template)
+calling a multimethod
+if the thing is a symbol determine what sort of java code element it represents
+if it's a list evaluate it recursively?
+
+
+
+
+
+
+
+
+----- cool idea, eventually?
+seems like it might be possible to use a kind of "reflection" ... loading the
+java classes which are being used in the generated code into the clojure vm
+so it can guess what a symbol represents, making verbosity less necessary
