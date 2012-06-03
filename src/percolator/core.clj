@@ -23,25 +23,8 @@
                           VariableDeclaratorId
                           )
 (japa.parser ASTHelper)
-(japa.parser.ast CompilationUnit)
-(japa.parser.ast PackageDeclaration)
-(japa.parser.ast.body AnnotationDeclaration 
-                               AnnotationMemberDeclaration 
-                               ClassOrInterfaceDeclaration 
-                               ConstructorDeclaration 
-                               EmptyMemberDeclaration 
-                               EmptyTypeDeclaration 
-                               EnumConstantDeclaration 
-                               EnumDeclaration 
-                               FieldDeclaration 
-                               InitializerDeclaration 
-                               MethodDeclaration
-                               TypeDeclaration ; I think this is an abstract base
-                               ModifierSet     ; that's like public and private and static and abstract and synchronized and final and all that shit
-                               Parameter       ; as in a method declaration
-                               VariableDeclarator
-                               VariableDeclaratorId
-                               )
+(japa.parser.ast CompilationUnit
+                 PackageDeclaration)
 (japa.parser.ast.stmt AssertStmt                            ; NOTYET
                                BlockStmt                             ; used, perhaps need a syntax for anonymous blocks
                                BreakStmt                             ; done, doesn't support identifying them uniquely which I think is only useful if you're using javaparser for modifying existing ASTs
@@ -111,50 +94,52 @@
 
   )
 
-(defn wrap-a-method-kluge [method-decl]
-  (let [ cu                (new CompilationUnit)
-         atype             (new ClassOrInterfaceDeclaration (ModifierSet/PUBLIC) false "CrapWrapperClass")
-       ]
+(defn wrap-a-class-kluge [class-decl]
+  (let [ cu (new CompilationUnit) ]
     (.setPackage cu (new PackageDeclaration (ASTHelper/createNameExpr "whatsys.percolator.test")))
-    (ASTHelper/addTypeDeclaration cu atype)
-    (ASTHelper/addMember atype method-decl)
+    (ASTHelper/addTypeDeclaration cu class-decl)
     (.toString cu)
     ))
 
-(defmacro vomit-method-decl [form]
-  `(println (wrap-a-method-kluge ~(interpret-method-decl form))))
+(defmacro vomit-class-decl [modifiers class-name & body-decls]
+  `(println (wrap-a-class-kluge ~(interpret-class-decl modifiers class-name body-decls))))
 
 ; Action!
-(vomit-method-decl
-  ( 'decl-method #{:private :synchronized} java.lang.String<x> "headbang" [(int x) (int y) (String args ...)]
-    ( 'if ( '== 2 3 ) (('return)) (('return false)))
-    ( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
-      ( '. System/out println x ))
-    ( '< 1 2 )
-    ( 'return (+ 3 2))
-    ( 'xor 1 2 )
-    ( '+= x 3 )
-    ( '< x nil )
-    ( '== x false )
-    ( '== x \f )
-    ( '== x 3.1415 )
-    ( 'super )
-    ( 'return ( 'this ))
-    ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
-    ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
-    ( 'new Shit<int> ( 'new Ass 5 ) )
-    ( 'local #{:volatile} int (x 3) (y 4) (z))
-    ( 'do-while ( '< x 3 )
-      ( '. System/out println "doin stuff" )
-      ( 'if ('== ( '. this getStatus ) "bad") (('break))))
-    ( 'continue )
-    ( 'foreach ( 'local #{} int (foo) )
-      ( '. this someCollection )
-      ( '. foo someOperation )
-      )
-    ( 'switch ( '. foo someOperation )
-        ( 3 ( '. dong someReaction ) )
-        ( 'default ( '. dong someShit ))
-        )
-    ( 'throw ('new Fuckballs 9) )
-  ))
+(vomit-class-decl
+  #{:public :final} "MySickClass"
+     'decl-method
+       #{:private :synchronized}
+       java.lang.String<x>
+       "headbang"
+       [(int x) (int y) (String args ...)]
+         ( 'if ( '== 2 3 ) (('return)) (('return false)))
+         ( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
+           ( '. System/out println x ))
+         ( '< 1 2 )
+         ( 'return (+ 3 2))
+         ( 'xor 1 2 )
+         ( '+= x 3 )
+         ( '< x nil )
+         ( '== x false )
+         ( '== x \f )
+         ( '== x 3.1415 )
+         ( 'super )
+         ( 'return ( 'this ))
+         ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
+         ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
+         ( 'new Shit<int> ( 'new Ass 5 ) )
+         ( 'local #{:volatile} int (x 3) (y 4) (z))
+         ( 'do-while ( '< x 3 )
+           ( '. System/out println "doin stuff" )
+           ( 'if ('== ( '. this getStatus ) "bad") (('break))))
+         ( 'continue )
+         ( 'foreach ( 'local #{} int (foo) )
+           ( '. this someCollection )
+           ( '. foo someOperation )
+           )
+         ( 'switch ( '. foo someOperation )
+             ( 3 ( '. dong someReaction ) )
+             ( 'default ( '. dong someShit ))
+             )
+         ( 'throw ('new Fuckballs 9) )
+    )

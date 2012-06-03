@@ -108,59 +108,41 @@
                                 WildcardType )
     )
   )
-(defn interpret-parameter [form]
-  (let [ param-type             (reference-type (interpret-type (nth form 0)))
-         param-name             (.toString (nth form 1))
-         array-count-or-varargs (first (nthrest form 2))
+
+(defn interpret-parameter [param-type param-name & array-count-or-varargs]
+  (let [ param-type             (reference-type (interpret-type param-type))
+         param-name             (.toString param-name)
+         array-count-or-varargs (first array-count-or-varargs)
          param-construction     `( ASTHelper/createParameter ~param-type ~param-name )
        ]
     (case array-count-or-varargs
       ...  `(doto ~param-construction (.setVarArgs true))
       nil  param-construction)))
 
-(interpret-parameter 
-  '(
-    String args ...
-    ))
-
-
-(defn interpret-method-decl [form]
-  (let [ modifiers   (interpret-modifiers    (nth form 1))
-         return-type (interpret-type         (nth form 2))
-         method-name                         (nth form 3)
-         param-list (map interpret-parameter (nth form 4))
-         body          (interpret-block  (nthrest form 5))
-       ]
-    `(doto
-       (new MethodDeclaration ~modifiers ~return-type ~method-name [~@param-list])
-       (.setBody ~body))))
+(defn interpret-method-decl [modifiers return-type method-name param-list & body]
+  `(doto
+     (new MethodDeclaration
+          ~(interpret-modifiers modifiers)
+          ~(interpret-type return-type)
+          ~method-name
+          [ ~@(map #(apply interpret-parameter %1) param-list) ] )
+     (.setBody ~(interpret-block body))))
 
 (defmulti interpret-body-decl first)
-(defmethod interpret-body-decl '(quote decl-method) [form] (interpret-method-decl form))
+(defmethod interpret-body-decl '(quote decl-method) [form] (apply interpret-method-decl (drop 1 form)))
 
-(defn interpret-class-decl [form]
-  (let [ modifiers (interpret-modifiers (nth form 1))
-         class-name (nth form 2)
-         body-decls (map interpret-body-decl (nthrest form 3))
-         ]
-    `( new ClassOrInterfaceDeclaration
-          nil ; javadoc
-          ~modifiers
-          nil ; annotations
-          false ; isInterface
-          ~class-name
-          nil ; list of TypeParameter
-          nil ; extends list
-          nil ; implements list
-          [~@body-decls] )))
+; TODO start here
+;(defn interpret-field-decl [form]
+;  )
 
-(comment 
-(interpret-class-decl '(
-                        'decl-class
-                        #{:public :final}
-                        "MySickClass"
-                        ( 'decl-method #{:private :synchronized} java.lang.String<x> "headbang" [(int x) (int y) (String args ...)] ('return x) )
-                        ))
-  )
-
-
+(defn interpret-class-decl [modifiers class-name & body-decls]
+  `( new ClassOrInterfaceDeclaration
+        nil ; javadoc
+        ~(interpret-modifiers modifiers)
+        nil ; annotations
+        false ; isInterface
+        ~class-name
+        nil ; list of TypeParameter
+        nil ; extends list
+        nil ; implements list
+        [ ~@( map interpret-body-decl body-decls ) ] ))
