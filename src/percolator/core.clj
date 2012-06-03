@@ -36,17 +36,17 @@
                                ExplicitConstructorInvocationStmt 
                                ExpressionStmt
                                ForeachStmt 
-                               ForStmt                               ; done
+                               ForStmt                               ; done-ish doesn't support multiple expressions in initializer or updater
                                IfStmt                                ; done
                                LabeledStmt 
-                               ReturnStmt 
+                               ReturnStmt                            ; done
                                SwitchEntryStmt 
                                SwitchStmt 
                                SynchronizedStmt 
                                ThrowStmt 
                                TryStmt 
                                TypeDeclarationStmt 
-                               WhileStmt
+                               WhileStmt                             ; done
                                ))
 ; Expressions
 (import '(japa.parser.ast.expr AnnotationExpr
@@ -445,6 +445,14 @@
       )
     ))
 
+(defmethod interpret-statement '(quote while) [form]
+  (let [ condition  (interpret-expression (nth form 1))
+         body       (interpret-block (nthrest form 2))
+         ]
+    `(new WhileStmt ~condition ~body)))
+
+    ;public WhileStmt(Expression condition, Statement body) {
+
 (defmethod interpret-statement :default [form]
   `(new ExpressionStmt ~(interpret-expression form)))
 
@@ -482,4 +490,5 @@
   ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
   ( 'new Shit<Ass> ( 'new Ass 5 ) )
   ( 'local #{:volatile} int (x 3) (y 4) (z))
+  ( 'while ( '< x 3 ) ( '. System/out println "doin stuff"))
   )
