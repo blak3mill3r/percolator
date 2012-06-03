@@ -175,13 +175,12 @@
           ~(interpret-expression         operand-r)
           ~(japaparser-operator-constant operator))))
 
-(defn interpret-expression-assignment-operation [expr]
-  (let [ operator  (japaparser-operator-constant (nth expr 0))
-         target    (interpret-expression         (nth expr 1))
-         value     (interpret-expression         (nth expr 2))
-        ]
-    `(new AssignExpr ~target ~value ~operator)
-    ))
+(defn interpret-expression-assignment-operation [operator]
+  (fn [target value]
+    `(new AssignExpr
+          ~(interpret-expression         target)
+          ~(interpret-expression         value)
+          ~(japaparser-operator-constant operator))))
 
 (defn interpret-expression-method-call [expr]
   (let [ target        (nth expr 1)
@@ -247,18 +246,18 @@
     '(quote |    ) ( interpret-expression-binary-operation '|  )
     '(quote &    ) ( interpret-expression-binary-operation '&  )
     ; assignment expressions
-    '(quote =    ) interpret-expression-assignment-operation
-    '(quote +=   ) interpret-expression-assignment-operation
-    '(quote -=   ) interpret-expression-assignment-operation
-    '(quote *=   ) interpret-expression-assignment-operation
-    '(quote slash=   ) interpret-expression-assignment-operation
-    '(quote &=   ) interpret-expression-assignment-operation
-    '(quote |=   ) interpret-expression-assignment-operation
-    '(quote xor= ) interpret-expression-assignment-operation
-    '(quote %=   ) interpret-expression-assignment-operation
-    '(quote <<=  ) interpret-expression-assignment-operation
-    '(quote >>=  ) interpret-expression-assignment-operation
-    '(quote >>>= ) interpret-expression-assignment-operation
+    '(quote =        ) ( interpret-expression-assignment-operation '=       )
+    '(quote +=       ) ( interpret-expression-assignment-operation '+=      )
+    '(quote -=       ) ( interpret-expression-assignment-operation '-=      )
+    '(quote *=       ) ( interpret-expression-assignment-operation '*=      )
+    '(quote slash=   ) ( interpret-expression-assignment-operation 'slash=  )
+    '(quote &=       ) ( interpret-expression-assignment-operation '&=      )
+    '(quote |=       ) ( interpret-expression-assignment-operation '|=      )
+    '(quote xor=     ) ( interpret-expression-assignment-operation 'xor=    )
+    '(quote %=       ) ( interpret-expression-assignment-operation '%=      )
+    '(quote <<=      ) ( interpret-expression-assignment-operation '<<=     )
+    '(quote >>=      ) ( interpret-expression-assignment-operation '>>=     )
+    '(quote >>>=     ) ( interpret-expression-assignment-operation '>>>=    )
     ; unary operation expressions, except for those that are ambiguous (see above, they are + and -)
     '(quote ++          ) ( interpret-expression-unary-operation '++          )
     '(quote --          ) ( interpret-expression-unary-operation '--          )

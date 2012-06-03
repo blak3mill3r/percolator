@@ -112,7 +112,7 @@
        java.lang.String<x>
        "headbang"
        [(int x) (int y) (String args ...)]
-         ( '+++ s )
+         ( '+= s 2 )
          ;( 'if ( '== 2 3 ) (('return)) (('return false)))
          ;( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
          ;  ( '. System/out println x ))
