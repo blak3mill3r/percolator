@@ -127,14 +127,18 @@
          match-expression (if is-default nil (interpret-expression match-expression-or-default)) ]
     `(new SwitchEntryStmt ~match-expression [ ~@(map interpret-statement statements) ] )))
 
-;FIXME rename me
-(defn interpret-switch-entry-statements [& entry-statements]
-  (map interpret-switch-entry-statement entry-statements))
-
 (defn interpret-statement-switch [expression & entries]
   `(new SwitchStmt
         ~(interpret-expression expression)
         [~@(map #(apply interpret-switch-entry-statement %1) entries)]))
+
+(defn interpret-statement-for [init condition update & body-statements]
+  `(new ForStmt
+        [ ~(interpret-expression init) ]
+        ~(interpret-expression condition)
+        [ ~(interpret-expression update) ]
+        ~(interpret-block body-statements)
+        ))
 
 (def statement-interpreters
   { '(quote return)   interpret-statement-return
@@ -142,7 +146,9 @@
     '(quote continue) interpret-statement-continue
     '(quote throw)    interpret-statement-throw
     '(quote switch)   interpret-statement-switch
+    '(quote for)      interpret-statement-for
     })
+
 
 (defn interpret-statement [form]
   (let [ expression-interpreter (expression-interpreters (first form))
@@ -160,16 +166,6 @@
 ; TODO try
 ;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {
 
-;(defmethod interpret-statement '(quote switch) [form]
-;  (let [ expression (interpret-expression (nth form 1))
-;         entries    (interpret-switch-entry-statements (nthrest form 2))
-;        ]
-;    `(new SwitchStmt ~expression ~entries )
-;    ))
-;
-;
-;    ;public SwitchEntryStmt(Expression label, List<Statement> stmts) {
-;
 ;(defmethod interpret-statement '(quote for) [form]
 ;  (let [ init (interpret-expression (nth form 1))
 ;         condition  (interpret-expression (nth form 2))
