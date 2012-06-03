@@ -1,9 +1,5 @@
-(ns percolator.core
-  (:use percolator.expression
-        percolator.type
-        percolator.util
-        percolator.statement
-        percolator.declaration)
+(ns percolator.japaparser
+
   (:import
     (japa.parser.ast.body AnnotationDeclaration 
                           AnnotationMemberDeclaration 
@@ -108,53 +104,4 @@
                                 VoidType              ; dude is going to build void rays
                                 WildcardType )
     )
-
-  )
-
-(defn wrap-a-method-kluge [method-decl]
-  (let [ cu                (new CompilationUnit)
-         atype             (new ClassOrInterfaceDeclaration (ModifierSet/PUBLIC) false "CrapWrapperClass")
-       ]
-    (.setPackage cu (new PackageDeclaration (ASTHelper/createNameExpr "whatsys.percolator.test")))
-    (ASTHelper/addTypeDeclaration cu atype)
-    (ASTHelper/addMember atype method-decl)
-    (.toString cu)
-    ))
-
-(defmacro vomit-method-decl [form]
-  `(println (wrap-a-method-kluge ~(interpret-method-decl form))))
-
-; Action!
-(vomit-method-decl
-  ( 'decl-method #{:private :synchronized} java.lang.String<x> "headbang" [(int x) (int y) (String args ...)]
-    ( 'if ( '== 2 3 ) (('return)) (('return false)))
-    ( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
-      ( '. System/out println x ))
-    ( '< 1 2 )
-    ( 'return (+ 3 2))
-    ( 'xor 1 2 )
-    ( '+= x 3 )
-    ( '< x nil )
-    ( '== x false )
-    ( '== x \f )
-    ( '== x 3.1415 )
-    ( 'super )
-    ( 'return ( 'this ))
-    ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
-    ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
-    ( 'new Shit<int> ( 'new Ass 5 ) )
-    ( 'local #{:volatile} int (x 3) (y 4) (z))
-    ( 'do-while ( '< x 3 )
-      ( '. System/out println "doin stuff" )
-      ( 'if ('== ( '. this getStatus ) "bad") (('break))))
-    ( 'continue )
-    ( 'foreach ( 'local #{} int (foo) )
-      ( '. this someCollection )
-      ( '. foo someOperation )
-      )
-    ( 'switch ( '. foo someOperation )
-        ( 3 ( '. dong someReaction ) )
-        ( 'default ( '. dong someShit ))
-        )
-    ( 'throw ('new Fuckballs 9) )
-  ))
+ )

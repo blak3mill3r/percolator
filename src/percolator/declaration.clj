@@ -1,9 +1,8 @@
-(ns percolator.core
+(ns percolator.declaration
   (:use percolator.expression
         percolator.type
         percolator.util
-        percolator.statement
-        percolator.declaration)
+        percolator.statement)
   (:import
     (japa.parser.ast.body AnnotationDeclaration 
                           AnnotationMemberDeclaration 
@@ -108,53 +107,60 @@
                                 VoidType              ; dude is going to build void rays
                                 WildcardType )
     )
-
   )
-
-(defn wrap-a-method-kluge [method-decl]
-  (let [ cu                (new CompilationUnit)
-         atype             (new ClassOrInterfaceDeclaration (ModifierSet/PUBLIC) false "CrapWrapperClass")
+(defn interpret-parameter [form]
+  (let [ param-type             (reference-type (interpret-type (nth form 0)))
+         param-name             (.toString (nth form 1))
+         array-count-or-varargs (first (nthrest form 2))
+         param-construction     `( ASTHelper/createParameter ~param-type ~param-name )
        ]
-    (.setPackage cu (new PackageDeclaration (ASTHelper/createNameExpr "whatsys.percolator.test")))
-    (ASTHelper/addTypeDeclaration cu atype)
-    (ASTHelper/addMember atype method-decl)
-    (.toString cu)
+    (case array-count-or-varargs
+      ...  `(doto ~param-construction (.setVarArgs true))
+      nil  param-construction)))
+
+(interpret-parameter 
+  '(
+    String args ...
     ))
 
-(defmacro vomit-method-decl [form]
-  `(println (wrap-a-method-kluge ~(interpret-method-decl form))))
 
-; Action!
-(vomit-method-decl
-  ( 'decl-method #{:private :synchronized} java.lang.String<x> "headbang" [(int x) (int y) (String args ...)]
-    ( 'if ( '== 2 3 ) (('return)) (('return false)))
-    ( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
-      ( '. System/out println x ))
-    ( '< 1 2 )
-    ( 'return (+ 3 2))
-    ( 'xor 1 2 )
-    ( '+= x 3 )
-    ( '< x nil )
-    ( '== x false )
-    ( '== x \f )
-    ( '== x 3.1415 )
-    ( 'super )
-    ( 'return ( 'this ))
-    ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
-    ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
-    ( 'new Shit<int> ( 'new Ass 5 ) )
-    ( 'local #{:volatile} int (x 3) (y 4) (z))
-    ( 'do-while ( '< x 3 )
-      ( '. System/out println "doin stuff" )
-      ( 'if ('== ( '. this getStatus ) "bad") (('break))))
-    ( 'continue )
-    ( 'foreach ( 'local #{} int (foo) )
-      ( '. this someCollection )
-      ( '. foo someOperation )
-      )
-    ( 'switch ( '. foo someOperation )
-        ( 3 ( '. dong someReaction ) )
-        ( 'default ( '. dong someShit ))
-        )
-    ( 'throw ('new Fuckballs 9) )
-  ))
+(defn interpret-method-decl [form]
+  (let [ modifiers   (interpret-modifiers    (nth form 1))
+         return-type (interpret-type         (nth form 2))
+         method-name                         (nth form 3)
+         param-list (map interpret-parameter (nth form 4))
+         body          (interpret-block  (nthrest form 5))
+       ]
+    `(doto
+       (new MethodDeclaration ~modifiers ~return-type ~method-name [~@param-list])
+       (.setBody ~body))))
+
+(defmulti interpret-body-decl first)
+(defmethod interpret-body-decl '(quote decl-method) [form] (interpret-method-decl form))
+
+(defn interpret-class-decl [form]
+  (let [ modifiers (interpret-modifiers (nth form 1))
+         class-name (nth form 2)
+         body-decls (map interpret-body-decl (nthrest form 3))
+         ]
+    `( new ClassOrInterfaceDeclaration
+          nil ; javadoc
+          ~modifiers
+          nil ; annotations
+          false ; isInterface
+          ~class-name
+          nil ; list of TypeParameter
+          nil ; extends list
+          nil ; implements list
+          [~@body-decls] )))
+
+(comment 
+(interpret-class-decl '(
+                        'decl-class
+                        #{:public :final}
+                        "MySickClass"
+                        ( 'decl-method #{:private :synchronized} java.lang.String<x> "headbang" [(int x) (int y) (String args ...)] ('return x) )
+                        ))
+  )
+
+

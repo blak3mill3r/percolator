@@ -1,9 +1,7 @@
-(ns percolator.core
+(ns percolator.statement
   (:use percolator.expression
         percolator.type
-        percolator.util
-        percolator.statement
-        percolator.declaration)
+        percolator.util)
   (:import
     (japa.parser.ast.body AnnotationDeclaration 
                           AnnotationMemberDeclaration 
@@ -108,53 +106,117 @@
                                 VoidType              ; dude is going to build void rays
                                 WildcardType )
     )
-
   )
 
-(defn wrap-a-method-kluge [method-decl]
-  (let [ cu                (new CompilationUnit)
-         atype             (new ClassOrInterfaceDeclaration (ModifierSet/PUBLIC) false "CrapWrapperClass")
-       ]
-    (.setPackage cu (new PackageDeclaration (ASTHelper/createNameExpr "whatsys.percolator.test")))
-    (ASTHelper/addTypeDeclaration cu atype)
-    (ASTHelper/addMember atype method-decl)
-    (.toString cu)
+(defn interpret-block [stmt-list]
+  (if stmt-list
+  `(doto (new BlockStmt)
+    (.setStmts (doto (new java.util.ArrayList)
+    ~@(
+       map #(cons '.add [%1]) (map interpret-statement stmt-list)
+       )
+      ))
+     )))
+
+(defmulti interpret-statement first :default :default)
+(defmethod interpret-statement '(quote return) [form]
+  (if (= (count form) 2)
+    `(new japa.parser.ast.stmt.ReturnStmt
+       ~(interpret-expression (nth form 1)))
+    `(new japa.parser.ast.stmt.ReturnStmt)
     ))
 
-(defmacro vomit-method-decl [form]
-  `(println (wrap-a-method-kluge ~(interpret-method-decl form))))
+(defmethod interpret-statement '(quote break) [form] `(new BreakStmt))
+(defmethod interpret-statement '(quote continue) [form] `(new ContinueStmt))
+(defmethod interpret-statement '(quote throw) [form] `(new ThrowStmt ~(interpret-expression (last form))))
 
-; Action!
-(vomit-method-decl
-  ( 'decl-method #{:private :synchronized} java.lang.String<x> "headbang" [(int x) (int y) (String args ...)]
-    ( 'if ( '== 2 3 ) (('return)) (('return false)))
-    ( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
-      ( '. System/out println x ))
-    ( '< 1 2 )
-    ( 'return (+ 3 2))
-    ( 'xor 1 2 )
-    ( '+= x 3 )
-    ( '< x nil )
-    ( '== x false )
-    ( '== x \f )
-    ( '== x 3.1415 )
-    ( 'super )
-    ( 'return ( 'this ))
-    ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
-    ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
-    ( 'new Shit<int> ( 'new Ass 5 ) )
-    ( 'local #{:volatile} int (x 3) (y 4) (z))
-    ( 'do-while ( '< x 3 )
-      ( '. System/out println "doin stuff" )
-      ( 'if ('== ( '. this getStatus ) "bad") (('break))))
-    ( 'continue )
-    ( 'foreach ( 'local #{} int (foo) )
-      ( '. this someCollection )
-      ( '. foo someOperation )
+
+;TODO TryStmt
+;(defmethod interpret-expression '(quote try)
+;  )
+    ;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {
+
+(defn interpret-statement-list [stmt-list]
+  (if stmt-list
+  `(doto (new java.util.ArrayList)
+    ~@( map #(cons '.add [%1]) (map interpret-statement stmt-list))
+      )))
+
+(defn interpret-switch-entry-statement [form]
+  (let [ is-default (= '(quote default) (first form))
+         match-expression (if is-default nil (interpret-expression (nth form 0)))
+         statements       (interpret-statement-list (nthrest form 1))
+         ]
+    `(new SwitchEntryStmt ~match-expression ~statements)
+    ))
+
+; there's a way to abstract out something from here
+; called add-each-to-array-list or something
+(defn interpret-switch-entry-statements [entry-stmt-list]
+  (if entry-stmt-list
+  `(doto (new java.util.ArrayList)
+    ~@( map #(cons '.add [%1]) (map interpret-switch-entry-statement entry-stmt-list))
+      )))
+
+(defmethod interpret-statement '(quote switch) [form]
+  (let [ expression (interpret-expression (nth form 1))
+         entries    (interpret-switch-entry-statements (nthrest form 2))
+        ]
+    `(new SwitchStmt ~expression ~entries )
+    ))
+
+
+    ;public SwitchEntryStmt(Expression label, List<Statement> stmts) {
+
+(defmethod interpret-statement '(quote for) [form]
+  (let [ init (interpret-expression (nth form 1))
+         condition  (interpret-expression (nth form 2))
+         update (interpret-expression (nth form 3))
+         body (interpret-block (nthrest form 4))
+         ]
+    `(new ForStmt
+          (doto (new java.util.ArrayList) (.add ~init))
+          ~condition
+          (doto (new java.util.ArrayList) (.add ~update))
+          ~body
       )
-    ( 'switch ( '. foo someOperation )
-        ( 3 ( '. dong someReaction ) )
-        ( 'default ( '. dong someShit ))
-        )
-    ( 'throw ('new Fuckballs 9) )
-  ))
+    ))
+
+(defmethod interpret-statement '(quote foreach) [form]
+  (let [ variable  (interpret-expression-variable-declaration (nth form 1))
+         interable (interpret-expression (nth form 2))
+         body      (interpret-block (nthrest form 3))
+         ]
+    `(new ForeachStmt ~variable ~interable ~body)))
+
+    ;;public ForeachStmt(VariableDeclarationExpr var, Expression iterable, Statement body) {
+
+(defmethod interpret-statement '(quote if) [form]
+  (let [ condition (interpret-expression (nth form 1))
+         if-block  (interpret-block (nth form 2))
+         else-block (interpret-block (first (nthrest form 3)))
+         ]
+    (if else-block
+      `(new IfStmt ~condition ~if-block ~else-block)
+      `(new IfStmt ~condition ~if-block nil)
+      )
+    ))
+
+(defmethod interpret-statement '(quote while) [form]
+  (let [ condition  (interpret-expression (nth form 1))
+         body       (interpret-block (nthrest form 2))
+         ]
+    `(new WhileStmt ~condition ~body)))
+
+(defmethod interpret-statement '(quote do-while) [form]
+  (let [ condition  (interpret-expression (nth form 1))
+         body       (interpret-block (nthrest form 2))
+         ]
+    `(new DoStmt ~body ~condition)))
+
+    ;public WhileStmt(Expression condition, Statement body) {
+
+(defmethod interpret-statement :default [form]
+  `(new ExpressionStmt ~(interpret-expression form)))
+
+
