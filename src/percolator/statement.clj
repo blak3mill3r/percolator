@@ -109,15 +109,7 @@
   )
 
 (defn interpret-block [stmt-list]
-  (if stmt-list
-  `(doto (new BlockStmt)
-    (.setStmts (doto (new java.util.ArrayList)
-    ~@(
-       map #(cons '.add [%1]) (map interpret-statement stmt-list)
-       )
-      ))
-     )))
-
+  `(new BlockStmt [ ~@(map interpret-statement stmt-list) ] ))
 
 (defn interpret-statement-return [& expression]
   (if (= nil (first expression))
@@ -128,10 +120,6 @@
 (defn interpret-statement-break    [] `(new BreakStmt))
 (defn interpret-statement-continue [] `(new ContinueStmt))
 (defn interpret-statement-throw [expression] `(new ThrowStmt ~(interpret-expression expression)))
-;
-;(defmethod interpret-statement '(quote break) [form] `(new BreakStmt))
-;(defmethod interpret-statement '(quote continue) [form] `(new ContinueStmt))
-;(defmethod interpret-statement '(quote throw) [form] `(new ThrowStmt ~(interpret-expression (last form))))
 
 (def statement-interpreters
   { '(quote return)   interpret-statement-return
@@ -142,43 +130,21 @@
 
 (defn interpret-statement [form]
   (let [ expression-interpreter (expression-interpreters (first form))
-         statement-interpreter  (statement-interpreters  (first form)) ]
+         statement-interpreter  (statement-interpreters  (first form))
+         interpreter-arguments  (drop 1 form) ]
     (if expression-interpreter
-                         `(new ExpressionStmt
-                               ~( apply expression-interpreter (drop 1 form)))
-                         (if statement-interpreter
-                           (apply statement-interpreter (drop 1 form))
-                           ; no matching expression or statement constructing syntax
-                           ; so eval it as a plain old clojure form
-                           ; and attempt to interpret the result as a statement form
-                           (interpret-statement (eval form))))))
-  ;(apply
-  ;  (statement-interpreters (first form))
-  ;  (drop 1 form)))
+      `(new ExpressionStmt ~( apply expression-interpreter interpreter-arguments ))
+      (if statement-interpreter
+        ( apply statement-interpreter interpreter-arguments )
+        ; no matching expression or statement constructing syntax
+        ; so eval it as a plain old clojure form
+        ; and attempt to interpret the result as a statement form
+        (interpret-statement (eval form))))))
 
-;(defmulti interpret-statement first :default :default)
-;(defmethod interpret-statement '(quote return) [form]
-;  (if (= (count form) 2)
-;    `(new japa.parser.ast.stmt.ReturnStmt
-;       ~(interpret-expression (nth form 1)))
-;    `(new japa.parser.ast.stmt.ReturnStmt)
-;    ))
-;
-;(defmethod interpret-statement '(quote break) [form] `(new BreakStmt))
-;(defmethod interpret-statement '(quote continue) [form] `(new ContinueStmt))
-;(defmethod interpret-statement '(quote throw) [form] `(new ThrowStmt ~(interpret-expression (last form))))
+; TODO try
+;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {
 
-
-;TODO TryStmt
-;(defmethod interpret-expression '(quote try)
-;  )
-    ;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {
-
-(defn interpret-statement-list [stmt-list]
-  (if stmt-list
-  `(doto (new java.util.ArrayList)
-    ~@( map #(cons '.add [%1]) (map interpret-statement stmt-list))
-      )))
+(defn interpret-statement-list [stmt-list] (map interpret-statement stmt-list))
 
 (defn interpret-switch-entry-statement [form]
   (let [ is-default (= '(quote default) (first form))
