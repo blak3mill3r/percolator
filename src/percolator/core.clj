@@ -44,7 +44,7 @@
                                SwitchStmt                            ; done
                                SynchronizedStmt                      ; NOTYET
                                ThrowStmt                             ; done
-                               TryStmt 
+                               TryStmt                               ; NOTYET
                                TypeDeclarationStmt 
                                WhileStmt                             ; done
                                ))
@@ -90,6 +90,7 @@
 ; Types
 (import '( japa.parser.ast.type ClassOrInterfaceType 
                                 PrimitiveType         ; a degrading term
+                                PrimitiveType$Primitive
                                 ReferenceType 
                                 Type
                                 VoidType 
@@ -111,11 +112,28 @@
     (.toString cu)
     ))
 
-(defn interpret-type [form]
-  `(new ClassOrInterfaceType
-        nil   ; FIXME TODO this argument, scope, will be needed for instantiating outer classes from inner classes
-        ;~(apply str (nthrest (.toString form) 1)))
-        ~(.toString form)))
+(def primitive-type
+  { "boolean"   'ASTHelper/BOOLEAN_TYPE
+    "char"      'ASTHelper/CHAR_TYPE
+    "byte"      'ASTHelper/BYTE_TYPE
+    "short"     'ASTHelper/SHORT_TYPE
+    "int"       'ASTHelper/INT_TYPE
+    "long"      'ASTHelper/LONG_TYPE
+    "float"     'ASTHelper/FLOAT_TYPE
+    "double"    'ASTHelper/DOUBLE_TYPE
+    "void"      'ASTHelper/VOID_TYPE
+   })
+
+(defn interpret-type [symbol]
+  (let [ name (.toString symbol)
+         primitive (primitive-type name)
+       ]
+    (if primitive
+      primitive
+      `(new ClassOrInterfaceType
+            nil   ; FIXME TODO this argument, scope, will be needed for instantiating outer classes from inner classes
+            ~name))
+      ))
 
 ; TODO smarter type inference
 ; and override syntax
@@ -317,7 +335,7 @@
   )
 
 (interpret-expression-variable-declaration
-  '( 'local #{} Sometype (x) ))
+  '( 'local #{} int (x) ))
 
 
 
@@ -424,6 +442,12 @@
 (defmethod interpret-statement '(quote continue) [form] `(new ContinueStmt))
 (defmethod interpret-statement '(quote throw) [form] `(new ThrowStmt ~(interpret-expression (last form))))
 
+
+;TODO TryStmt
+;(defmethod interpret-expression '(quote try)
+;  )
+    ;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {
+
 (defn interpret-statement-list [stmt-list]
   (if stmt-list
   `(doto (new java.util.ArrayList)
@@ -525,8 +549,8 @@
 ; Action!
 (vomit-block
   ( 'if ( '== 2 3 ) (('return)) (('return false)))
-  ( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
-    ( '. System/out println x ))
+;  ( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
+;    ( '. System/out println x ))
   ( '< 1 2 )
   ( 'return (+ 3 2))
   ( 'xor 1 2 )
@@ -545,10 +569,10 @@
     ( '. System/out println "doin stuff" )
     ( 'if ('== ( '. this getStatus ) "bad") (('break))))
   ( 'continue )
-  ( 'foreach ( 'local #{} int (foo) )
-    ( '. this someCollection )
-    ( '. foo someOperation )
-    )
+  ;( 'foreach ( 'local #{} int (foo) )
+  ;  ( '. this someCollection )
+  ;  ( '. foo someOperation )
+  ;  )
   ( 'switch ( '. foo someOperation )
       ( 3 ( '. dong someReaction ) )
       ( 'default ( '. dong someShit ))
