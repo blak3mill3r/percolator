@@ -1,7 +1,7 @@
 (ns percolator.core
   (:use [clojure.contrib.string :as string]))
 
-(import '(japa.parser ASTHelper)) ; we'll help ourselves but VOID_TYPE is used
+(import '(japa.parser ASTHelper)) ; we'll help ourselves but primitive type static constants are used
 
 ; Various other bits of AST
 (import '(japa.parser.ast CompilationUnit))
@@ -549,8 +549,8 @@
 ; Action!
 (vomit-block
   ( 'if ( '== 2 3 ) (('return)) (('return false)))
-;  ( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
-;    ( '. System/out println x ))
+  ( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
+    ( '. System/out println x ))
   ( '< 1 2 )
   ( 'return (+ 3 2))
   ( 'xor 1 2 )
@@ -563,19 +563,19 @@
   ( 'return ( 'this ))
   ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
   ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
-  ( 'new Shit<Ass> ( 'new Ass 5 ) )
+  ( 'new Shit<int> ( 'new Ass 5 ) )
   ( 'local #{:volatile} int (x 3) (y 4) (z))
   ( 'do-while ( '< x 3 )
     ( '. System/out println "doin stuff" )
     ( 'if ('== ( '. this getStatus ) "bad") (('break))))
   ( 'continue )
-  ;( 'foreach ( 'local #{} int (foo) )
-  ;  ( '. this someCollection )
-  ;  ( '. foo someOperation )
-  ;  )
+  ( 'foreach ( 'local #{} int (foo) )
+    ( '. this someCollection )
+    ( '. foo someOperation )
+    )
   ( 'switch ( '. foo someOperation )
       ( 3 ( '. dong someReaction ) )
       ( 'default ( '. dong someShit ))
       )
-  ( 'throw 9)
+  ( 'throw ('new Fuckballs 9) )
   )
