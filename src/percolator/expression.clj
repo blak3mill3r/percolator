@@ -210,7 +210,7 @@
 ; this is kinda the central point of definition of the syntax of this library
 ; it associates first-elements of clojure forms
 ; with functions which interpret those forms as various Java-AST-constructing macros
-(def interpreters
+(def expression-interpreters
   { '(quote .    ) interpret-expression-method-call
     '(quote ==   ) ( interpret-expression-binary-operation '==  )
     '(quote !=   ) ( interpret-expression-binary-operation '!=  )
@@ -269,7 +269,7 @@
 ; ... which is badass extensibility
 (defmethod interpret-expression clojure.lang.IPersistentList [list]
   (apply
-    (interpreters (first list) eval-and-interpret)
+    (expression-interpreters (first list) eval-and-interpret)
     (drop 1 list)))
 
 (comment 

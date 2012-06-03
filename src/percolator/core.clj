@@ -104,6 +104,12 @@
 (defmacro vomit-class-decl [modifiers class-name & body-decls]
   `(println (wrap-a-class-kluge ~(interpret-class-decl modifiers class-name body-decls))))
 
+(defn add-two-to-s []
+  '( '+= s 2 ))
+
+(defn return-false []
+  '( 'return false ))
+
 ; Action!
 (vomit-class-decl
   #{:public :final} "MySickClass"
@@ -113,7 +119,9 @@
        "headbang"
        [(int x) (int y) (String args ...)]
          ( '+= s 2 )
-         ( '. Something/foo bar "baz" )
+         ( add-two-to-s )
+         ( return-false )
+         ;( '. Something/foo bar "baz" )
          ;( 'if ( '== 2 3 ) (('return)) (('return false)))
          ;( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
          ;  ( '. System/out println x ))
@@ -125,13 +133,13 @@
          ;( '== x false )
          ;( '== x \f )
          ;( '== x 3.1415 )
-         ( 'super )
-         ( 'this )
+         ;( 'super )
+         ;( 'this )
          ;( 'return ( 'this ))
          ;( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
          ;( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
-         ( 'new Shit<int> ( 'new Ass 5 ) )
-         ( 'local #{:volatile} int (x 3) (y 4) (z))
+         ;( 'new Shit<int> ( 'new Ass 5 ) )
+         ;( 'local #{:volatile} int (x 3) (y 4) (z))
          ;( 'do-while ( '< x 3 )
          ;  ( '. System/out println "doin stuff" )
          ;  ( 'if ('== ( '. this getStatus ) "bad") (('break))))

@@ -118,17 +118,44 @@
       ))
      )))
 
-(defmulti interpret-statement first :default :default)
-(defmethod interpret-statement '(quote return) [form]
-  (if (= (count form) 2)
-    `(new japa.parser.ast.stmt.ReturnStmt
-       ~(interpret-expression (nth form 1)))
-    `(new japa.parser.ast.stmt.ReturnStmt)
-    ))
 
-(defmethod interpret-statement '(quote break) [form] `(new BreakStmt))
-(defmethod interpret-statement '(quote continue) [form] `(new ContinueStmt))
-(defmethod interpret-statement '(quote throw) [form] `(new ThrowStmt ~(interpret-expression (last form))))
+(defn interpret-statement-return [& expression]
+  (if (= nil (first expression))
+    `(new japa.parser.ast.stmt.ReturnStmt)
+    `(new japa.parser.ast.stmt.ReturnStmt
+       ~(interpret-expression (first expression)))))
+
+(def statement-interpreters
+  { '(quote return) interpret-statement-return
+    })
+
+(defn interpret-statement [form]
+  (let [ expression-interpreter (expression-interpreters (first form))
+         statement-interpreter  (statement-interpreters  (first form)) ]
+    (if expression-interpreter
+                         `(new ExpressionStmt
+                               ~( apply expression-interpreter (drop 1 form)))
+                         (if statement-interpreter
+                           (apply statement-interpreter (drop 1 form))
+                           ; no matching expression or statement constructing syntax
+                           ; so eval it as a plain old clojure form
+                           ; and attempt to interpret the result as a statement form
+                           (interpret-statement (eval form))))))
+  ;(apply
+  ;  (statement-interpreters (first form))
+  ;  (drop 1 form)))
+
+;(defmulti interpret-statement first :default :default)
+;(defmethod interpret-statement '(quote return) [form]
+;  (if (= (count form) 2)
+;    `(new japa.parser.ast.stmt.ReturnStmt
+;       ~(interpret-expression (nth form 1)))
+;    `(new japa.parser.ast.stmt.ReturnStmt)
+;    ))
+;
+;(defmethod interpret-statement '(quote break) [form] `(new BreakStmt))
+;(defmethod interpret-statement '(quote continue) [form] `(new ContinueStmt))
+;(defmethod interpret-statement '(quote throw) [form] `(new ThrowStmt ~(interpret-expression (last form))))
 
 
 ;TODO TryStmt
@@ -158,65 +185,65 @@
     ~@( map #(cons '.add [%1]) (map interpret-switch-entry-statement entry-stmt-list))
       )))
 
-(defmethod interpret-statement '(quote switch) [form]
-  (let [ expression (interpret-expression (nth form 1))
-         entries    (interpret-switch-entry-statements (nthrest form 2))
-        ]
-    `(new SwitchStmt ~expression ~entries )
-    ))
-
-
-    ;public SwitchEntryStmt(Expression label, List<Statement> stmts) {
-
-(defmethod interpret-statement '(quote for) [form]
-  (let [ init (interpret-expression (nth form 1))
-         condition  (interpret-expression (nth form 2))
-         update (interpret-expression (nth form 3))
-         body (interpret-block (nthrest form 4))
-         ]
-    `(new ForStmt
-          (doto (new java.util.ArrayList) (.add ~init))
-          ~condition
-          (doto (new java.util.ArrayList) (.add ~update))
-          ~body
-      )
-    ))
-
-(defmethod interpret-statement '(quote foreach) [form]
-  (let [ variable  (interpret-expression-variable-declaration (nth form 1))
-         interable (interpret-expression (nth form 2))
-         body      (interpret-block (nthrest form 3))
-         ]
-    `(new ForeachStmt ~variable ~interable ~body)))
-
-    ;;public ForeachStmt(VariableDeclarationExpr var, Expression iterable, Statement body) {
-
-(defmethod interpret-statement '(quote if) [form]
-  (let [ condition (interpret-expression (nth form 1))
-         if-block  (interpret-block (nth form 2))
-         else-block (interpret-block (first (nthrest form 3)))
-         ]
-    (if else-block
-      `(new IfStmt ~condition ~if-block ~else-block)
-      `(new IfStmt ~condition ~if-block nil)
-      )
-    ))
-
-(defmethod interpret-statement '(quote while) [form]
-  (let [ condition  (interpret-expression (nth form 1))
-         body       (interpret-block (nthrest form 2))
-         ]
-    `(new WhileStmt ~condition ~body)))
-
-(defmethod interpret-statement '(quote do-while) [form]
-  (let [ condition  (interpret-expression (nth form 1))
-         body       (interpret-block (nthrest form 2))
-         ]
-    `(new DoStmt ~body ~condition)))
-
-    ;public WhileStmt(Expression condition, Statement body) {
-
-(defmethod interpret-statement :default [form]
-  `(new ExpressionStmt ~(interpret-expression form)))
-
+;(defmethod interpret-statement '(quote switch) [form]
+;  (let [ expression (interpret-expression (nth form 1))
+;         entries    (interpret-switch-entry-statements (nthrest form 2))
+;        ]
+;    `(new SwitchStmt ~expression ~entries )
+;    ))
+;
+;
+;    ;public SwitchEntryStmt(Expression label, List<Statement> stmts) {
+;
+;(defmethod interpret-statement '(quote for) [form]
+;  (let [ init (interpret-expression (nth form 1))
+;         condition  (interpret-expression (nth form 2))
+;         update (interpret-expression (nth form 3))
+;         body (interpret-block (nthrest form 4))
+;         ]
+;    `(new ForStmt
+;          (doto (new java.util.ArrayList) (.add ~init))
+;          ~condition
+;          (doto (new java.util.ArrayList) (.add ~update))
+;          ~body
+;      )
+;    ))
+;
+;(defmethod interpret-statement '(quote foreach) [form]
+;  (let [ variable  (interpret-expression-variable-declaration (nth form 1))
+;         interable (interpret-expression (nth form 2))
+;         body      (interpret-block (nthrest form 3))
+;         ]
+;    `(new ForeachStmt ~variable ~interable ~body)))
+;
+;    ;;public ForeachStmt(VariableDeclarationExpr var, Expression iterable, Statement body) {
+;
+;(defmethod interpret-statement '(quote if) [form]
+;  (let [ condition (interpret-expression (nth form 1))
+;         if-block  (interpret-block (nth form 2))
+;         else-block (interpret-block (first (nthrest form 3)))
+;         ]
+;    (if else-block
+;      `(new IfStmt ~condition ~if-block ~else-block)
+;      `(new IfStmt ~condition ~if-block nil)
+;      )
+;    ))
+;
+;(defmethod interpret-statement '(quote while) [form]
+;  (let [ condition  (interpret-expression (nth form 1))
+;         body       (interpret-block (nthrest form 2))
+;         ]
+;    `(new WhileStmt ~condition ~body)))
+;
+;(defmethod interpret-statement '(quote do-while) [form]
+;  (let [ condition  (interpret-expression (nth form 1))
+;         body       (interpret-block (nthrest form 2))
+;         ]
+;    `(new DoStmt ~body ~condition)))
+;
+;    ;public WhileStmt(Expression condition, Statement body) {
+;
+;(defmethod interpret-statement :default [form]
+;  `(new ExpressionStmt ~(interpret-expression form)))
+;
 
