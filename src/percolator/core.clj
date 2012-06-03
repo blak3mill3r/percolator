@@ -30,18 +30,18 @@
 (import '(japa.parser.ast.stmt AssertStmt 
                                BlockStmt 
                                BreakStmt                             ; done, doesn't support identifying them uniquely which I think is only useful if you're using javaparser for modifying existing ASTs
-                               ContinueStmt 
-                               DoStmt 
-                               EmptyStmt 
-                               ExplicitConstructorInvocationStmt 
-                               ExpressionStmt
-                               ForeachStmt 
+                               ContinueStmt                          ; done, ditto unique identification
+                               DoStmt                                ; done
+                               EmptyStmt                             ; maybe not needed?
+                               ExplicitConstructorInvocationStmt     ; TODO might kinda require class & method declarations 
+                               ExpressionStmt                        ; done
+                               ForeachStmt                           ; done
                                ForStmt                               ; done-ish doesn't support multiple expressions in initializer or updater
                                IfStmt                                ; done
-                               LabeledStmt 
+                               LabeledStmt                           ; TODO think of a syntax for this
                                ReturnStmt                            ; done
-                               SwitchEntryStmt 
-                               SwitchStmt 
+                               SwitchEntryStmt                       ; done
+                               SwitchStmt                            ; done
                                SynchronizedStmt 
                                ThrowStmt 
                                TryStmt 
@@ -423,6 +423,48 @@
 (defmethod interpret-statement '(quote break) [form] `(new BreakStmt))
 (defmethod interpret-statement '(quote continue) [form] `(new ContinueStmt))
 
+(defn interpret-statement-list [stmt-list]
+  (if stmt-list
+  `(doto (new java.util.ArrayList)
+    ~@( map #(cons '.add [%1]) (map interpret-statement stmt-list))
+      )))
+
+(defn interpret-switch-entry-statement [form]
+  (let [ is-default (= '(quote default) (first form))
+         match-expression (if is-default nil (interpret-expression (nth form 0)))
+         statements       (interpret-statement-list (nthrest form 1))
+         ]
+    `(new SwitchEntryStmt ~match-expression ~statements)
+    ))
+
+; there's a way to abstract out something from here
+; called add-each-to-array-list or something
+(defn interpret-switch-entry-statements [entry-stmt-list]
+  (if entry-stmt-list
+  `(doto (new java.util.ArrayList)
+    ~@( map #(cons '.add [%1]) (map interpret-switch-entry-statement entry-stmt-list))
+      )))
+
+(defn interpret-block [stmt-list]
+  (if stmt-list
+  `(doto (new BlockStmt)
+    (.setStmts (doto (new java.util.ArrayList)
+    ~@(
+       map #(cons '.add [%1]) (map interpret-statement stmt-list)
+       )
+      ))
+     )))
+
+(defmethod interpret-statement '(quote switch) [form]
+  (let [ expression (interpret-expression (nth form 1))
+         entries    (interpret-switch-entry-statements (nthrest form 2))
+        ]
+    `(new SwitchStmt ~expression ~entries )
+    ))
+
+
+    ;public SwitchEntryStmt(Expression label, List<Statement> stmts) {
+
 (defmethod interpret-statement '(quote for) [form]
   (let [ init (interpret-expression (nth form 1))
          condition  (interpret-expression (nth form 2))
@@ -436,6 +478,15 @@
           ~body
       )
     ))
+
+(defmethod interpret-statement '(quote foreach) [form]
+  (let [ variable  (interpret-expression-variable-declaration (nth form 1))
+         interable (interpret-expression (nth form 2))
+         body      (interpret-block (nthrest form 3))
+         ]
+    `(new ForeachStmt ~variable ~interable ~body)))
+
+    ;;public ForeachStmt(VariableDeclarationExpr var, Expression iterable, Statement body) {
 
 (defmethod interpret-statement '(quote if) [form]
   (let [ condition (interpret-expression (nth form 1))
@@ -454,20 +505,16 @@
          ]
     `(new WhileStmt ~condition ~body)))
 
+(defmethod interpret-statement '(quote do-while) [form]
+  (let [ condition  (interpret-expression (nth form 1))
+         body       (interpret-block (nthrest form 2))
+         ]
+    `(new DoStmt ~body ~condition)))
+
     ;public WhileStmt(Expression condition, Statement body) {
 
 (defmethod interpret-statement :default [form]
   `(new ExpressionStmt ~(interpret-expression form)))
-
-(defn interpret-block [stmt-list]
-  (if stmt-list
-  `(doto (new BlockStmt)
-    (.setStmts (doto (new java.util.ArrayList)
-    ~@(
-       map #(cons '.add [%1]) (map interpret-statement stmt-list)
-       )
-      ))
-     )))
 
 (defmacro vomit-block [& stmt-list]
   `(println (spit-it-out ~(interpret-block stmt-list))))
@@ -493,8 +540,16 @@
   ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
   ( 'new Shit<Ass> ( 'new Ass 5 ) )
   ( 'local #{:volatile} int (x 3) (y 4) (z))
-  ( 'while ( '< x 3 )
+  ( 'do-while ( '< x 3 )
     ( '. System/out println "doin stuff" )
     ( 'if ('== ( '. this getStatus ) "bad") (('break))))
   ( 'continue )
+  ( 'foreach ( 'local #{} int (foo) )
+    ( '. this someCollection )
+    ( '. foo someOperation )
+    )
+  ( 'switch ( '. foo someOperation )
+      ( 3 ( '. dong someReaction ) )
+      ( 'default ( '. dong someShit ))
+      )
   )
