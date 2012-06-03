@@ -279,10 +279,22 @@
        )
     ))
 
-(defn interpret-modifiers [form]
-  0)
+(def modifiers-keywords
+  { :public         ModifierSet/PUBLIC
+    :private        ModifierSet/PRIVATE
+    :protected      ModifierSet/PROTECTED
+    :static         ModifierSet/STATIC
+    :final          ModifierSet/FINAL
+    :synchronized   ModifierSet/SYNCHRONIZED
+    :volatile       ModifierSet/VOLATILE
+    :transient      ModifierSet/TRANSIENT
+    :native         ModifierSet/NATIVE
+    :abstract       ModifierSet/ABSTRACT
+    :strictfp       ModifierSet/STRICTFP
+   })
 
-(first (nthrest [1 2] 3 ))
+(defn interpret-modifiers [form]
+  (reduce bit-or 0 (map modifiers-keywords form)))
 
 (defn interpret-declarator [form]
   (let [ name        (.toString (nth form 0))
@@ -445,5 +457,5 @@
   ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
   ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
   ( 'new Shit<Ass> ( 'new Ass 5 ) )
-  ( 'local #{} Sometype (x 3) (y 4) (z))
+  ( 'local #{:volatile} Sometype (x 3) (y 4) (z))
   )
