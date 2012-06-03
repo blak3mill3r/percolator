@@ -182,22 +182,11 @@
           ~(interpret-expression         value)
           ~(japaparser-operator-constant operator))))
 
-(defn interpret-expression-method-call [expr]
-  (let [ target        (nth expr 1)
-         function-name (nth expr 2)
-         arguments     (map interpret-expression (nthrest expr 3))
-       ]
-    `(doto
-       (new MethodCallExpr
-         ~(interpret-expression target)
-         ~(.toString function-name)
-         )
-       (.setArgs (doto (new java.util.ArrayList)
-;                   ~@(map #( .add (literal-string %) ) arguments)
-                   ~@(map #( cons '.add [%1] ) arguments)
-                   ))
-       )
-    ))
+(defn interpret-expression-method-call [target function-name & arguments]
+  `(new MethodCallExpr
+    ~(interpret-expression target)
+    ~(.toString function-name)
+    [ ~@(map interpret-expression arguments) ]))
 
 (defn interpret-declarator [form]
   (let [ name        (.toString (nth form 0))
