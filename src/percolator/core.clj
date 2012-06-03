@@ -1,5 +1,5 @@
 (ns percolator.core
-  (:refer [clojure.contrib.string :as string]))
+  (:use [clojure.contrib.string :as string]))
 
 (import '(japa.parser ASTHelper)) ; we'll help ourselves but VOID_TYPE is used
 
@@ -22,6 +22,10 @@
                                TypeDeclaration ; I think this is an abstract base
                                ModifierSet     ; that's like public and private and static and abstract and synchronized and final and all that shit
                                Parameter       ; as in a method declaration
+                               VariableDeclarator
+    ;public VariableDeclarator(VariableDeclaratorId id, Expression init) {
+                               VariableDeclaratorId
+    ; takes string name
                                ))
 
 ; Statements
@@ -74,7 +78,7 @@
                                NameExpr                         ; done
                                NormalAnnotationExpr             ; wtf
                                NullLiteralExpr                  ; done
-                               ObjectCreationExpr               ; aka new TODO needs types
+                               ObjectCreationExpr               ; done-ish, doesn't support outer/inner classes
                                QualifiedNameExpr                ; done-ish with the /-in-a-symbol syntax
                                SingleMemberAnnotationExpr 
                                StringLiteralExpr                ; done
@@ -82,11 +86,13 @@
                                ThisExpr                         ; done
                                UnaryExpr                        ; FIXME TODO
                                UnaryExpr$Operator               ; done
-                               VariableDeclarationExpr
+                               VariableDeclarationExpr          ; TODO needs types
+    ;public VariableDeclarationExpr(int modifiers, Type type, List<VariableDeclarator> vars) {
                                ))
 
 ; Types
 (import '( japa.parser.ast.type ClassOrInterfaceType 
+    ;public ClassOrInterfaceType(ClassOrInterfaceType scope, String name) {
                                 PrimitiveType         ; a degrading term
                                 ReferenceType 
                                 Type
@@ -109,17 +115,34 @@
     (.toString cu)
     ))
 
+(defn interpret-type [form]
+  `(new ClassOrInterfaceType
+        nil   ; FIXME TODO this argument, scope, will be needed for instantiating outer classes from inner classes
+        ;~(apply str (nthrest (.toString form) 1)))
+        ~(.toString form)))
+
 ; TODO smarter type inference
 ; and override syntax
 (defmulti interpret-expression class)
 
 ; clojure literals to java literals
-(defmethod interpret-expression java.lang.String    [string] `(new StringLiteralExpr ~string))
-(defmethod interpret-expression java.lang.Long      [long]   `(new LongLiteralExpr   ~(.toString long)))
+(defmethod interpret-expression java.lang.String    [string] `(new StringLiteralExpr  ~string))
+(defmethod interpret-expression java.lang.Long      [long]   `(new LongLiteralExpr    ~(.toString long)))
 (defmethod interpret-expression java.lang.Boolean   [bool]   `(new BooleanLiteralExpr ~bool))
-(defmethod interpret-expression java.lang.Character [char]   `(new CharLiteralExpr   ~(.toString char)))
-(defmethod interpret-expression java.lang.Double    [double] `(new DoubleLiteralExpr ~(.toString double)))
+(defmethod interpret-expression java.lang.Character [char]   `(new CharLiteralExpr    ~(.toString char)))
+(defmethod interpret-expression java.lang.Double    [double] `(new DoubleLiteralExpr  ~(.toString double)))
 (defmethod interpret-expression nil                 [& a]    `(new NullLiteralExpr ))
+
+; clojure symbols as a shorthand for NameExpr and FieldAccessExpr-of-NameExpr
+; i.e. System or System/out
+(defmethod interpret-expression clojure.lang.Symbol [symbol]
+  (if (re-find #"^\w*\/\w*$" (.toString symbol))
+    (let [ name-and-field (string/split #"/" (.toString symbol)) ]
+      `(new FieldAccessExpr (new NameExpr ~(first name-and-field)) ~(last name-and-field))
+      )
+    `(new NameExpr ~(.toString symbol))
+    ))
+
 
 (defn eval-and-interpret [list] (interpret-expression (eval list)))
 
@@ -177,6 +200,18 @@
     '(quote +++         ) 'UnaryExpr$Operator/posIncrement     ; order dictates difference in java ... not going to go there
     '(quote ---         ) 'UnaryExpr$Operator/posDecrement
   })
+
+(defn interpret-expression-new [form]
+  (let [ type-name (nth form 1)
+         arguments (map interpret-expression (nthrest form 2))
+       ]
+
+    `(new ObjectCreationExpr
+        nil  ; FIXME this argument, scope, can be used for instantiating outer classes from inner classes
+        ~(interpret-type (nth form 1))
+        (doto (new java.util.ArrayList)
+          ~@(map #( cons '.add [%1] ) arguments)
+          ))))
 
 (defn interpret-expression-this [form] `(new ThisExpr))
 
@@ -244,13 +279,39 @@
        )
     ))
 
-(defmethod interpret-expression clojure.lang.Symbol [symbol]
-  (if (re-find #"^\w*\/\w*$" (.toString symbol))
-    (let [ name-and-field (string/split #"/" (.toString symbol)) ]
-      `(new FieldAccessExpr (new NameExpr ~(first name-and-field)) ~(last name-and-field))
-      )
-    `(new NameExpr ~(.toString symbol))
-    ))
+(defn interpret-modifiers [form]
+  0)
+
+(first (nthrest [1 2] 3 ))
+
+(defn interpret-declarator [form]
+  (let [ name        (.toString (nth form 0))
+         initializer (first (nthrest form 1))
+       ]
+    `(new VariableDeclarator
+       (new VariableDeclaratorId ~name)
+       ~(if initializer (interpret-expression initializer))
+        )))
+
+(defn interpret-expression-variable-declaration [form]
+  (let [ modifiers (interpret-modifiers (nth form 1))
+         java-type (interpret-type (nth form 2))
+         declarators (map interpret-declarator (nthrest form 3))
+         ]
+  `(new VariableDeclarationExpr
+     ~modifiers
+     ~java-type 
+     (doto (new java.util.ArrayList)
+       ~@(map #( cons '.add [%1] ) declarators)
+       )
+        )
+    )
+  )
+    ;public VariableDeclarationExpr(int modifiers, Type type, List<VariableDeclarator> vars) {
+
+(interpret-expression-variable-declaration
+  '( 'local #{} Sometype (x) ))
+
 
 
 ; this is kinda the central point of definition of the syntax of this library
@@ -308,6 +369,9 @@
      ; miscellaneous expression
       '(quote super) interpret-expression-super
       '(quote this)  interpret-expression-this
+      '(quote new)   interpret-expression-new
+     ; local variable declaration
+      '(quote local ) interpret-expression-variable-declaration
     } (first list)
     eval-and-interpret ; default
     ) list))
@@ -380,4 +444,6 @@
   ( 'return ( 'this ))
   ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
   ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
+  ( 'new Shit<Ass> ( 'new Ass 5 ) )
+  ( 'local #{} Sometype (x 3) (y 4) (z))
   )
