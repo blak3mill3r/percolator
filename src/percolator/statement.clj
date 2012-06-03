@@ -125,8 +125,19 @@
     `(new japa.parser.ast.stmt.ReturnStmt
        ~(interpret-expression (first expression)))))
 
+(defn interpret-statement-break    [] `(new BreakStmt))
+(defn interpret-statement-continue [] `(new ContinueStmt))
+(defn interpret-statement-throw [expression] `(new ThrowStmt ~(interpret-expression expression)))
+;
+;(defmethod interpret-statement '(quote break) [form] `(new BreakStmt))
+;(defmethod interpret-statement '(quote continue) [form] `(new ContinueStmt))
+;(defmethod interpret-statement '(quote throw) [form] `(new ThrowStmt ~(interpret-expression (last form))))
+
 (def statement-interpreters
-  { '(quote return) interpret-statement-return
+  { '(quote return)   interpret-statement-return
+    '(quote break)    interpret-statement-break
+    '(quote continue) interpret-statement-continue
+    '(quote throw)    interpret-statement-throw
     })
 
 (defn interpret-statement [form]
