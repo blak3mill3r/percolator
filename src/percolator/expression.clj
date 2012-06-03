@@ -63,38 +63,38 @@
 ; symbol aliases
 ; which resolves to an Operator constant from japaparser
 (def japaparser-operator-constant
-  { '(quote ==   ) 'BinaryExpr$Operator/equals
-    '(quote !=   ) 'BinaryExpr$Operator/notEquals
-    '(quote <=   ) 'BinaryExpr$Operator/lessEquals
-    '(quote >=   ) 'BinaryExpr$Operator/greaterEquals
-    '(quote <    ) 'BinaryExpr$Operator/less
-    '(quote >    ) 'BinaryExpr$Operator/greater
-    '(quote <<   ) 'BinaryExpr$Operator/lShift
-    '(quote >>   ) 'BinaryExpr$Operator/rSignedShift
-    '(quote >>>  ) 'BinaryExpr$Operator/rUnsignedShift
-    '(quote +    ) 'BinaryExpr$Operator/plus
-    '(quote -    ) 'BinaryExpr$Operator/minus
-    '(quote *    ) 'BinaryExpr$Operator/times
-    '(quote /    ) 'BinaryExpr$Operator/divide
-    '(quote %    ) 'BinaryExpr$Operator/remainder
-    '(quote xor  ) 'BinaryExpr$Operator/xor
-    '(quote ||   ) 'BinaryExpr$Operator/or
-    '(quote &&   ) 'BinaryExpr$Operator/and
-    '(quote |    ) 'BinaryExpr$Operator/binOr
-    '(quote &    ) 'BinaryExpr$Operator/binAnd
-   ; assignment operators
-    '(quote =    ) 'AssignExpr$Operator/assign
-    '(quote +=   ) 'AssignExpr$Operator/plus
-    '(quote -=   ) 'AssignExpr$Operator/minus
-    '(quote *=   ) 'AssignExpr$Operator/star
-    '(quote slash= ) 'AssignExpr$Operator/slash  ; irritating, reader pissed at '\= (  but not at '\  )
-    '(quote &=   ) 'AssignExpr$Operator/and
-    '(quote |=   ) 'AssignExpr$Operator/or
-    '(quote xor= ) 'AssignExpr$Operator/xor
-    '(quote %=   ) 'AssignExpr$Operator/rem
-    '(quote <<=  ) 'AssignExpr$Operator/lShift
-    '(quote >>=  ) 'AssignExpr$Operator/rSignedShift
-    '(quote >>>= ) 'AssignExpr$Operator/rUnsignedShift
+  { '==      'BinaryExpr$Operator/equals
+    '!=      'BinaryExpr$Operator/notEquals
+    '<=      'BinaryExpr$Operator/lessEquals
+    '>=      'BinaryExpr$Operator/greaterEquals
+    '<       'BinaryExpr$Operator/less
+    '>       'BinaryExpr$Operator/greater
+    '<<      'BinaryExpr$Operator/lShift
+    '>>      'BinaryExpr$Operator/rSignedShift
+    '>>>     'BinaryExpr$Operator/rUnsignedShift
+    '+       'BinaryExpr$Operator/plus
+    '-       'BinaryExpr$Operator/minus
+    '*       'BinaryExpr$Operator/times
+    '/       'BinaryExpr$Operator/divide
+    '%       'BinaryExpr$Operator/remainder
+    'xor     'BinaryExpr$Operator/xor
+    '||      'BinaryExpr$Operator/or
+    '&&      'BinaryExpr$Operator/and
+    '|       'BinaryExpr$Operator/binOr
+    '&       'BinaryExpr$Operator/binAnd
+   ; assigment
+    '=       'AssignExpr$Operator/assign
+    '+=      'AssignExpr$Operator/plus
+    '-=      'AssignExpr$Operator/minus
+    '*=      'AssignExpr$Operator/star
+    'slash=  'AssignExpr$Operator/slash  ; irritating, reader pissed at '\= (  but not at '\  )
+    '&=      'AssignExpr$Operator/and
+    '|=      'AssignExpr$Operator/or
+    'xor=    'AssignExpr$Operator/xor
+    '%=      'AssignExpr$Operator/rem
+    '<<=     'AssignExpr$Operator/lShift
+    '>>=     'AssignExpr$Operator/rSignedShift
+    '>>>=    'AssignExpr$Operator/rUnsignedShift
   })
 
 ; has to be distinct from the above because the names collide
@@ -150,28 +150,23 @@
 
 (defn interpret-expression-unary-operation [operator]
   (fn [operand]
-    (let [ operator (japaparser-operator-type-unary operator)
-           operand  (interpret-expression     operand)
-         ]
-      `(new UnaryExpr ~operand ~operator)
-      )))
+    `(new UnaryExpr
+          ~(interpret-expression operand)
+          ~(japaparser-operator-type-unary operator))))
 
 ; there's a slight ambiguity problem with + and -
 ; they can be unary or binary
 ; this function must decide which based on how many expressions it is given
-(defn interpret-expression-ambiguous-binary-or-unary-operation [expr]
-  (if (= 3 (count expr)) ; if it's a binary op
-    (let [ operator  (japaparser-operator-constant (nth expr 0))
-           operand-l (interpret-expression         (nth expr 1))
-           operand-r (interpret-expression         (nth expr 2))
-         ]
-      `(new BinaryExpr ~operand-l ~operand-r ~operator)
-      )
-    ; otherwise it's unary
-    (let [ operator  (japaparser-operator-type-unary (nth expr 0))
-           operand   (interpret-expression           (nth expr 1))
-         ]
-      `(new UnaryExpr ~operand ~operator)
+(defn interpret-expression-ambiguous-binary-or-unary-operation [operator]
+  (fn [operand-l & operand-r]
+    (if (first operand-r)
+      `(new BinaryExpr
+            ~(interpret-expression operand-l)
+            ~(interpret-expression (first operand-r))
+            ~(japaparser-operator-constant operator))
+      `(new UnaryExpr
+            ~(interpret-expression operand-l)
+            ~(japaparser-operator-constant operator))
       )))
 
 (defn interpret-expression-binary-operation [expr]
@@ -243,8 +238,8 @@
     '(quote <<   ) interpret-expression-binary-operation
     '(quote >>   ) interpret-expression-binary-operation
     '(quote >>>  ) interpret-expression-binary-operation
-    '(quote +    ) interpret-expression-ambiguous-binary-or-unary-operation
-    '(quote -    ) interpret-expression-ambiguous-binary-or-unary-operation
+    '(quote +    ) ( interpret-expression-ambiguous-binary-or-unary-operation '+)
+    '(quote -    ) ( interpret-expression-ambiguous-binary-or-unary-operation '-)
     '(quote *    ) interpret-expression-binary-operation
     '(quote /    ) interpret-expression-binary-operation
     '(quote %    ) interpret-expression-binary-operation
