@@ -27,8 +27,8 @@
                                ))
 
 ; Statements
-(import '(japa.parser.ast.stmt AssertStmt 
-                               BlockStmt 
+(import '(japa.parser.ast.stmt AssertStmt                            ; NOTYET
+                               BlockStmt                             ; used, perhaps need a syntax for anonymous blocks
                                BreakStmt                             ; done, doesn't support identifying them uniquely which I think is only useful if you're using javaparser for modifying existing ASTs
                                ContinueStmt                          ; done, ditto unique identification
                                DoStmt                                ; done
@@ -42,8 +42,8 @@
                                ReturnStmt                            ; done
                                SwitchEntryStmt                       ; done
                                SwitchStmt                            ; done
-                               SynchronizedStmt 
-                               ThrowStmt 
+                               SynchronizedStmt                      ; NOTYET
+                               ThrowStmt                             ; done
                                TryStmt 
                                TypeDeclarationStmt 
                                WhileStmt                             ; done
@@ -422,6 +422,7 @@
 
 (defmethod interpret-statement '(quote break) [form] `(new BreakStmt))
 (defmethod interpret-statement '(quote continue) [form] `(new ContinueStmt))
+(defmethod interpret-statement '(quote throw) [form] `(new ThrowStmt ~(interpret-expression (last form))))
 
 (defn interpret-statement-list [stmt-list]
   (if stmt-list
@@ -552,4 +553,5 @@
       ( 3 ( '. dong someReaction ) )
       ( 'default ( '. dong someShit ))
       )
+  ( 'throw 9)
   )
