@@ -84,7 +84,7 @@
                                ThisExpr                         ; done
                                UnaryExpr                        ; FIXME TODO
                                UnaryExpr$Operator               ; done
-                               VariableDeclarationExpr          ; TODO needs types
+                               VariableDeclarationExpr          ; done-ish? can do a simple local variable ... lacking array types
                                ))
 
 ; Types
@@ -93,7 +93,7 @@
                                 PrimitiveType$Primitive
                                 ReferenceType 
                                 Type
-                                VoidType 
+                                VoidType              ; dude is going to build void rays
                                 WildcardType ))
 
 (defn spit-it-out [block-stmt]
@@ -109,6 +109,16 @@
     (.setVarArgs param true)
     (ASTHelper/addParameter amethod param)
     (.setBody amethod block-stmt)
+    (.toString cu)
+    ))
+
+(defn wrap-a-method-kluge [method-decl]
+  (let [ cu                (new CompilationUnit)
+         atype             (new ClassOrInterfaceDeclaration (ModifierSet/PUBLIC) false "CrapWrapperClass")
+       ]
+    (.setPackage cu (new PackageDeclaration (ASTHelper/createNameExpr "whatsys.percolator.test")))
+    (ASTHelper/addTypeDeclaration cu atype)
+    (ASTHelper/addMember atype method-decl)
     (.toString cu)
     ))
 
@@ -544,6 +554,70 @@
 (defmacro vomit-block [& stmt-list]
   `(println (spit-it-out ~(interpret-block stmt-list))))
 
+(defn interpret-method-decl [form]
+  (let [ modifiers   (interpret-modifiers    (nth form 1))
+         return-type (interpret-type         (nth form 2))
+         method-name                         (nth form 3)
+         param-list (map interpret-parameter (nth form 4))
+         body          (interpret-block  (nthrest form 5))
+       ]
+    `(doto
+       (new MethodDeclaration ~modifiers ~return-type ~method-name [~@param-list])
+       (.setBody ~body))))
+
+(defn reference-type [type]
+  `(new ReferenceType ~type 0))
+; FIXME 0 is the array count , 0 meaning its not an array TODO support arrays
+
+(defn interpret-parameter [form]
+  (let [ param-type             (reference-type (interpret-type (nth form 0)))
+         param-name             (.toString (nth form 1))
+         array-count-or-varargs (first (nthrest form 2))
+         param-construction     `( ASTHelper/createParameter ~param-type ~param-name )
+       ]
+    (case array-count-or-varargs
+      ...  `(doto ~param-construction (.setVarArgs true))
+      nil  param-construction)))
+
+(interpret-parameter 
+  '(
+    String args ...
+    ))
+
+
+; wow I'm dumb
+; all this doto ArrayList .add bullshit
+; clojure takes care of it for me
+; as below
+; just pass a clojure array
+(new MethodDeclaration (ModifierSet/PUBLIC) (ASTHelper/VOID_TYPE) "main"
+     [ (ASTHelper/createParameter (ASTHelper/createReferenceType "String" 0) "args") ]
+     )
+    ;  public static void main(String... args) {
+  ;       amethod           (new MethodDeclaration (ModifierSet/PUBLIC) (ASTHelper/VOID_TYPE) "main")
+  ;       param             (ASTHelper/createParameter (ASTHelper/createReferenceType "String" 0) "args")
+  ;     ]
+  ;  (.setPackage cu (new PackageDeclaration (ASTHelper/createNameExpr "whatsys.percolator.test")))
+  ;  (ASTHelper/addTypeDeclaration cu atype)
+  ;  (.setModifiers amethod (ModifierSet/addModifier (.getModifiers amethod) (ModifierSet/STATIC)))
+  ;  (ASTHelper/addMember atype amethod)
+  ;  (.setVarArgs param true)
+  ;  (ASTHelper/addParameter amethod param)
+  ;  (.setBody amethod block-stmt)
+    ;public MethodDeclaration(int modifiers, Type type, String name, List<Parameter> parameters) {
+    ;public MethodDeclaration(JavadocComment javaDoc, int modifiers, List<AnnotationExpr> annotations, List<TypeParameter> typeParameters, Type type, String name, List<Parameter> parameters, int arrayCount, List<NameExpr> throws_, BlockStmt block) {
+
+(defmacro vomit-method-decl [form]
+  `(println (wrap-a-method-kluge ~(interpret-method-decl form))))
+
+(vomit-method-decl
+  ( 'decl-method #{:private :synchronized} java.lang.String "headbang" [(int x) (int y) (String args ...)]
+    ( 'return 1 )))
+
+
+(interpret-method-decl
+'( 'decl-method #{:public :static} void "main" [(String args ...)]
+     ( 'return 1 )))
 ; not quite satisfied with the look of the above but it works
 
 ; Action!
@@ -579,3 +653,4 @@
       )
   ( 'throw ('new Fuckballs 9) )
   )
+
