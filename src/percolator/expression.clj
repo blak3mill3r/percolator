@@ -267,10 +267,12 @@
 ; could be a clojure literal which becomes a java literal expression object expression
 ; ... but it could also be any other clojure form that is a valid percolator syntax
 ; ... which is badass extensibility
-(defmethod interpret-expression clojure.lang.IPersistentList [list]
-  (apply
-    (expression-interpreters (first list) eval-and-interpret)
-    (drop 1 list)))
+(defmethod interpret-expression clojure.lang.IPersistentList [form]
+  (let [ expression-interpreter (expression-interpreters (first form))
+         interpreter-arguments  (drop 1 form) ]
+    (if expression-interpreter
+      ( apply expression-interpreter interpreter-arguments )
+      (interpret-expression (eval form)))))
 
 (comment 
 (interpret-expression 'Balls/cow)

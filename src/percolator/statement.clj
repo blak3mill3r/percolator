@@ -121,11 +121,27 @@
 (defn interpret-statement-continue [] `(new ContinueStmt))
 (defn interpret-statement-throw [expression] `(new ThrowStmt ~(interpret-expression expression)))
 
+;FIXME rename me
+(defn interpret-switch-entry-statement [match-expression-or-default & statements]
+  (let [ is-default       (= '(quote default) match-expression-or-default)
+         match-expression (if is-default nil (interpret-expression match-expression-or-default)) ]
+    `(new SwitchEntryStmt ~match-expression [ ~@(map interpret-statement statements) ] )))
+
+;FIXME rename me
+(defn interpret-switch-entry-statements [& entry-statements]
+  (map interpret-switch-entry-statement entry-statements))
+
+(defn interpret-statement-switch [expression & entries]
+  `(new SwitchStmt
+        ~(interpret-expression expression)
+        [~@(map #(apply interpret-switch-entry-statement %1) entries)]))
+
 (def statement-interpreters
   { '(quote return)   interpret-statement-return
     '(quote break)    interpret-statement-break
     '(quote continue) interpret-statement-continue
     '(quote throw)    interpret-statement-throw
+    '(quote switch)   interpret-statement-switch
     })
 
 (defn interpret-statement [form]
@@ -143,24 +159,6 @@
 
 ; TODO try
 ;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {
-
-(defn interpret-statement-list [stmt-list] (map interpret-statement stmt-list))
-
-(defn interpret-switch-entry-statement [form]
-  (let [ is-default (= '(quote default) (first form))
-         match-expression (if is-default nil (interpret-expression (nth form 0)))
-         statements       (interpret-statement-list (nthrest form 1))
-         ]
-    `(new SwitchEntryStmt ~match-expression ~statements)
-    ))
-
-; there's a way to abstract out something from here
-; called add-each-to-array-list or something
-(defn interpret-switch-entry-statements [entry-stmt-list]
-  (if entry-stmt-list
-  `(doto (new java.util.ArrayList)
-    ~@( map #(cons '.add [%1]) (map interpret-switch-entry-statement entry-stmt-list))
-      )))
 
 ;(defmethod interpret-statement '(quote switch) [form]
 ;  (let [ expression (interpret-expression (nth form 1))
