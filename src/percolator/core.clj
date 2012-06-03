@@ -23,9 +23,7 @@
                                ModifierSet     ; that's like public and private and static and abstract and synchronized and final and all that shit
                                Parameter       ; as in a method declaration
                                VariableDeclarator
-    ;public VariableDeclarator(VariableDeclaratorId id, Expression init) {
                                VariableDeclaratorId
-    ; takes string name
                                ))
 
 ; Statements
@@ -38,9 +36,8 @@
                                ExplicitConstructorInvocationStmt 
                                ExpressionStmt
                                ForeachStmt 
-                               ForStmt 
-                               IfStmt 
-    ;public IfStmt(Expression condition, Statement thenStmt, Statement elseStmt) {
+                               ForStmt                               ; done
+                               IfStmt                                ; done
                                LabeledStmt 
                                ReturnStmt 
                                SwitchEntryStmt 
@@ -88,12 +85,10 @@
                                UnaryExpr                        ; FIXME TODO
                                UnaryExpr$Operator               ; done
                                VariableDeclarationExpr          ; TODO needs types
-    ;public VariableDeclarationExpr(int modifiers, Type type, List<VariableDeclarator> vars) {
                                ))
 
 ; Types
 (import '( japa.parser.ast.type ClassOrInterfaceType 
-    ;public ClassOrInterfaceType(ClassOrInterfaceType scope, String name) {
                                 PrimitiveType         ; a degrading term
                                 ReferenceType 
                                 Type
@@ -320,7 +315,6 @@
         )
     )
   )
-    ;public VariableDeclarationExpr(int modifiers, Type type, List<VariableDeclarator> vars) {
 
 (interpret-expression-variable-declaration
   '( 'local #{} Sometype (x) ))
@@ -426,11 +420,25 @@
     `(new japa.parser.ast.stmt.ReturnStmt)
     ))
 
+(defmethod interpret-statement '(quote for) [form]
+  (let [ init (interpret-expression (nth form 1))
+         condition  (interpret-expression (nth form 2))
+         update (interpret-expression (nth form 3))
+         body (interpret-block (nthrest form 4))
+         ]
+    `(new ForStmt
+          (doto (new java.util.ArrayList) (.add ~init))
+          ~condition
+          (doto (new java.util.ArrayList) (.add ~update))
+          ~body
+      )
+    ))
+
 (defmethod interpret-statement '(quote if) [form]
   (let [ condition (interpret-expression (nth form 1))
          if-block  (interpret-block (nth form 2))
          else-block (interpret-block (first (nthrest form 3)))
-        ]
+         ]
     (if else-block
       `(new IfStmt ~condition ~if-block ~else-block)
       `(new IfStmt ~condition ~if-block nil)
@@ -457,7 +465,9 @@
 
 ; Action!
 (vomit-block
-  ( 'if ( '== 2 3 ) (('return)) (('return false)) )
+  ( 'if ( '== 2 3 ) (('return)) (('return false)))
+  ( 'for ( 'local #{} int (x 0) ) ( '< x 5 ) ( '++ x )
+    ( '. System/out println x ))
   ( '< 1 2 )
   ( 'return (+ 3 2))
   ( 'xor 1 2 )
