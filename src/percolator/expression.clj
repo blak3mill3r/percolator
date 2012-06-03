@@ -166,16 +166,14 @@
             ~(japaparser-operator-constant operator))
       `(new UnaryExpr
             ~(interpret-expression operand-l)
-            ~(japaparser-operator-constant operator))
-      )))
+            ~(japaparser-operator-constant operator)))))
 
-(defn interpret-expression-binary-operation [expr]
-  (let [ operator  (japaparser-operator-constant (nth expr 0))
-         operand-l (interpret-expression         (nth expr 1))
-         operand-r (interpret-expression         (nth expr 2))
-       ]
-    `(new BinaryExpr ~operand-l ~operand-r ~operator)
-    ))
+(defn interpret-expression-binary-operation [operator]
+  (fn [operand-l operand-r]
+    `(new BinaryExpr
+          ~(interpret-expression         operand-l)
+          ~(interpret-expression         operand-r)
+          ~(japaparser-operator-constant operator))))
 
 (defn interpret-expression-assignment-operation [expr]
   (let [ operator  (japaparser-operator-constant (nth expr 0))
@@ -229,25 +227,25 @@
 ; with functions which interpret those forms as various Java-AST-constructing macros
 (def interpreters
   { '(quote .    ) interpret-expression-method-call
-    '(quote ==   ) interpret-expression-binary-operation
-    '(quote !=   ) interpret-expression-binary-operation
-    '(quote <=   ) interpret-expression-binary-operation
-    '(quote >=   ) interpret-expression-binary-operation
-    '(quote <    ) interpret-expression-binary-operation
-    '(quote >    ) interpret-expression-binary-operation
-    '(quote <<   ) interpret-expression-binary-operation
-    '(quote >>   ) interpret-expression-binary-operation
-    '(quote >>>  ) interpret-expression-binary-operation
+    '(quote ==   ) ( interpret-expression-binary-operation '==  )
+    '(quote !=   ) ( interpret-expression-binary-operation '!=  )
+    '(quote <=   ) ( interpret-expression-binary-operation '<=  )
+    '(quote >=   ) ( interpret-expression-binary-operation '>=  )
+    '(quote <    ) ( interpret-expression-binary-operation '<   )
+    '(quote >    ) ( interpret-expression-binary-operation '>   )
+    '(quote <<   ) ( interpret-expression-binary-operation '<<  )
+    '(quote >>   ) ( interpret-expression-binary-operation '>>  )
+    '(quote >>>  ) ( interpret-expression-binary-operation '>>> )
     '(quote +    ) ( interpret-expression-ambiguous-binary-or-unary-operation '+)
     '(quote -    ) ( interpret-expression-ambiguous-binary-or-unary-operation '-)
-    '(quote *    ) interpret-expression-binary-operation
-    '(quote /    ) interpret-expression-binary-operation
-    '(quote %    ) interpret-expression-binary-operation
-    '(quote xor  ) interpret-expression-binary-operation ; xor has to be special because '^ pisses the reader off (room for improvement)
-    '(quote ||   ) interpret-expression-binary-operation
-    '(quote &&   ) interpret-expression-binary-operation
-    '(quote |    ) interpret-expression-binary-operation
-    '(quote &    ) interpret-expression-binary-operation
+    '(quote *    ) ( interpret-expression-binary-operation '*  )
+    '(quote /    ) ( interpret-expression-binary-operation '/  )
+    '(quote %    ) ( interpret-expression-binary-operation '%  )
+    '(quote xor  ) ( interpret-expression-binary-operation 'xor)
+    '(quote ||   ) ( interpret-expression-binary-operation '|| )
+    '(quote &&   ) ( interpret-expression-binary-operation '&& )
+    '(quote |    ) ( interpret-expression-binary-operation '|  )
+    '(quote &    ) ( interpret-expression-binary-operation '&  )
     ; assignment expressions
     '(quote =    ) interpret-expression-assignment-operation
     '(quote +=   ) interpret-expression-assignment-operation
