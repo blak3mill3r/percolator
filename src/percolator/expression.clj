@@ -188,20 +188,17 @@
     ~(.toString function-name)
     [ ~@(map interpret-expression arguments) ]))
 
-(defn interpret-declarator [form]
-  (let [ name        (.toString (nth form 0))
-         initializer (first (nthrest form 1))
-       ]
-    `(new VariableDeclarator
-       (new VariableDeclaratorId ~name)
-       ~(if initializer (interpret-expression initializer))
-        )))
+(defn interpret-declarator [name & initializer]
+  `(new VariableDeclarator
+     (new VariableDeclaratorId ~(.toString name))
+     ~(if (first initializer) (interpret-expression (first initializer)))
+      ))
 
 (defn interpret-expression-variable-declaration [modifiers java-type & declarators]
   `(new VariableDeclarationExpr
         ~(interpret-modifiers modifiers)
         ~(interpret-type java-type)
-        [ ~@(map interpret-declarator declarators) ] ))
+        [ ~@(map #(apply interpret-declarator %1) declarators) ] ))
 
 (defn eval-and-interpret [list] (interpret-expression (eval list)))
 
