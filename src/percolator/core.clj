@@ -420,9 +420,8 @@
     `(new japa.parser.ast.stmt.ReturnStmt)
     ))
 
-(defmethod interpret-statement '(quote break) [form]
-  `(new BreakStmt)
-  )
+(defmethod interpret-statement '(quote break) [form] `(new BreakStmt))
+(defmethod interpret-statement '(quote continue) [form] `(new ContinueStmt))
 
 (defmethod interpret-statement '(quote for) [form]
   (let [ init (interpret-expression (nth form 1))
@@ -497,4 +496,5 @@
   ( 'while ( '< x 3 )
     ( '. System/out println "doin stuff" )
     ( 'if ('== ( '. this getStatus ) "bad") (('break))))
+  ( 'continue )
   )
