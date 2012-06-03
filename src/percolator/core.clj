@@ -40,6 +40,7 @@
                                ForeachStmt 
                                ForStmt 
                                IfStmt 
+    ;public IfStmt(Expression condition, Statement thenStmt, Statement elseStmt) {
                                LabeledStmt 
                                ReturnStmt 
                                SwitchEntryStmt 
@@ -418,24 +419,36 @@
 ; it is
 
 (defmulti interpret-statement first :default :default)
-(defmethod interpret-statement '(quote return) [expression]
-  (if (= (count expression) 2)
+(defmethod interpret-statement '(quote return) [form]
+  (if (= (count form) 2)
     `(new japa.parser.ast.stmt.ReturnStmt
-       ~(interpret-expression (nth expression 1)))
+       ~(interpret-expression (nth form 1)))
     `(new japa.parser.ast.stmt.ReturnStmt)
     ))
 
-(defmethod interpret-statement :default [expr]
-  `(new ExpressionStmt ~(interpret-expression expr)))
+(defmethod interpret-statement '(quote if) [form]
+  (let [ condition (interpret-expression (nth form 1))
+         if-block  (interpret-block (nth form 2))
+         else-block (interpret-block (first (nthrest form 3)))
+        ]
+    (if else-block
+      `(new IfStmt ~condition ~if-block ~else-block)
+      `(new IfStmt ~condition ~if-block nil)
+      )
+    ))
+
+(defmethod interpret-statement :default [form]
+  `(new ExpressionStmt ~(interpret-expression form)))
 
 (defn interpret-block [stmt-list]
+  (if stmt-list
   `(doto (new BlockStmt)
     (.setStmts (doto (new java.util.ArrayList)
     ~@(
        map #(cons '.add [%1]) (map interpret-statement stmt-list)
        )
       ))
-     ) )
+     )))
 
 (defmacro vomit-block [& stmt-list]
   `(println (spit-it-out ~(interpret-block stmt-list))))
@@ -444,6 +457,7 @@
 
 ; Action!
 (vomit-block
+  ( 'if ( '== 2 3 ) (('return)) (('return false)) )
   ( '< 1 2 )
   ( 'return (+ 3 2))
   ( 'xor 1 2 )
@@ -457,5 +471,5 @@
   ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
   ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
   ( 'new Shit<Ass> ( 'new Ass 5 ) )
-  ( 'local #{:volatile} Sometype (x 3) (y 4) (z))
+  ( 'local #{:volatile} int (x 3) (y 4) (z))
   )
