@@ -29,7 +29,7 @@
 ; Statements
 (import '(japa.parser.ast.stmt AssertStmt 
                                BlockStmt 
-                               BreakStmt 
+                               BreakStmt                             ; done, doesn't support identifying them uniquely which I think is only useful if you're using javaparser for modifying existing ASTs
                                ContinueStmt 
                                DoStmt 
                                EmptyStmt 
@@ -420,6 +420,10 @@
     `(new japa.parser.ast.stmt.ReturnStmt)
     ))
 
+(defmethod interpret-statement '(quote break) [form]
+  `(new BreakStmt)
+  )
+
 (defmethod interpret-statement '(quote for) [form]
   (let [ init (interpret-expression (nth form 1))
          condition  (interpret-expression (nth form 2))
@@ -490,5 +494,7 @@
   ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
   ( 'new Shit<Ass> ( 'new Ass 5 ) )
   ( 'local #{:volatile} int (x 3) (y 4) (z))
-  ( 'while ( '< x 3 ) ( '. System/out println "doin stuff"))
+  ( 'while ( '< x 3 )
+    ( '. System/out println "doin stuff" )
+    ( 'if ('== ( '. this getStatus ) "bad") (('break))))
   )
