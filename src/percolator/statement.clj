@@ -140,6 +140,12 @@
         ~(interpret-block body-statements)
         ))
 
+(defn interpret-statement-foreach [variable iterable & body-statements]
+  `(new ForeachStmt
+        ~(apply interpret-expression-variable-declaration variable)
+        ~(interpret-expression iterable)
+        ~(interpret-block body-statements)))
+
 (def statement-interpreters
   { '(quote return)   interpret-statement-return
     '(quote break)    interpret-statement-break
@@ -147,8 +153,8 @@
     '(quote throw)    interpret-statement-throw
     '(quote switch)   interpret-statement-switch
     '(quote for)      interpret-statement-for
+    '(quote foreach)  interpret-statement-foreach
     })
-
 
 (defn interpret-statement [form]
   (let [ expression-interpreter (expression-interpreters (first form))
@@ -166,29 +172,6 @@
 ; TODO try
 ;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {
 
-;(defmethod interpret-statement '(quote for) [form]
-;  (let [ init (interpret-expression (nth form 1))
-;         condition  (interpret-expression (nth form 2))
-;         update (interpret-expression (nth form 3))
-;         body (interpret-block (nthrest form 4))
-;         ]
-;    `(new ForStmt
-;          (doto (new java.util.ArrayList) (.add ~init))
-;          ~condition
-;          (doto (new java.util.ArrayList) (.add ~update))
-;          ~body
-;      )
-;    ))
-;
-;(defmethod interpret-statement '(quote foreach) [form]
-;  (let [ variable  (interpret-expression-variable-declaration (nth form 1))
-;         interable (interpret-expression (nth form 2))
-;         body      (interpret-block (nthrest form 3))
-;         ]
-;    `(new ForeachStmt ~variable ~interable ~body)))
-;
-;    ;;public ForeachStmt(VariableDeclarationExpr var, Expression iterable, Statement body) {
-;
 ;(defmethod interpret-statement '(quote if) [form]
 ;  (let [ condition (interpret-expression (nth form 1))
 ;         if-block  (interpret-block (nth form 2))
