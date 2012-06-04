@@ -101,8 +101,8 @@
     (.toString cu)
     ))
 
-(defmacro vomit-class-decl [modifiers class-name & body-decls]
-  `(println (wrap-a-class-kluge ~(interpret-class-decl modifiers class-name body-decls))))
+(defmacro vomit-class-decl [& args]
+  `(println (wrap-a-class-kluge ~(apply interpret-class-decl args))))
 
 (defn add-two-to-s []
   '( '+= s 2 ))
@@ -113,7 +113,11 @@
 ; Action!
 (vomit-class-decl
   #{:public :final} "MySickClass"
-     'decl-method
+    ( 'field #{:volatile} int (x) (y) (z))
+
+    ( 'class #{:public} "MyInnerFuckingClass"
+      ( 'field #{private} String (label) ))
+    ( 'method
        #{:private :synchronized}
        java.lang.String<x>
        "headbang"
@@ -161,4 +165,4 @@
              ('default ( 'return 69 ))
              )
          ( 'throw ('new Fuckballs 9) )
-    )
+        ))

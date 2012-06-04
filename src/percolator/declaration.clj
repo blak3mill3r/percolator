@@ -119,7 +119,7 @@
       ...  `(doto ~param-construction (.setVarArgs true))
       nil  param-construction)))
 
-(defn interpret-method-decl [modifiers return-type method-name param-list & body]
+(defn interpret-body-decl-method [modifiers return-type method-name param-list & body]
   `(doto
      (new MethodDeclaration
           ~(interpret-modifiers modifiers)
@@ -128,12 +128,25 @@
           [ ~@(map #(apply interpret-parameter %1) param-list) ] )
      (.setBody ~(interpret-block body))))
 
-(defmulti interpret-body-decl first)
-(defmethod interpret-body-decl '(quote decl-method) [form] (apply interpret-method-decl (drop 1 form)))
+(defn interpret-body-decl-field [modifiers java-type & declarators]
+  `(new FieldDeclaration
+        ~(interpret-modifiers modifiers)
+        ~(interpret-type java-type)
+        [ ~@(map #(apply interpret-declarator %1) declarators) ] )) 
 
-; TODO start here
-;(defn interpret-field-decl [form]
-;  )
+(def body-decl-interpreters
+  { '(quote method) interpret-body-decl-method
+    '(quote field)  interpret-body-decl-field
+    '(quote class)  interpret-class-decl
+    })
+
+(defn interpret-body-decl [form]
+  (let [ interpreter (body-decl-interpreters (first form))
+         arguments   (drop 1 form) ]
+    (if interpreter
+      (apply interpreter arguments)
+      (interpret-body-decl (eval form)))))
+
 
 (defn interpret-class-decl [modifiers class-name & body-decls]
   `( new ClassOrInterfaceDeclaration
@@ -146,3 +159,7 @@
         nil ; extends list
         nil ; implements list
         [ ~@( map interpret-body-decl body-decls ) ] ))
+
+; keep in mind that all body declarations share 2 things in common
+; they can have javadocs and they can have annotations
+; make sure that's generic in syntax and implementation
