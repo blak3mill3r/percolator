@@ -116,7 +116,7 @@
     ( 'field #{:volatile} int (x) (y) (z))
 
     ( 'class #{:public} "MyInnerFuckingClass"
-      ( 'field #{private} String (label) ))
+      ( 'field #{:private} String (label) ))
     ( 'method
        #{:private :synchronized}
        java.lang.String<x>
