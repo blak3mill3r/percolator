@@ -128,6 +128,18 @@
           [ ~@(map #(apply interpret-parameter %1) param-list) ] )
      (.setBody ~(interpret-block body))))
 
+(defn interpret-body-decl-ctor [modifiers method-name param-list & body]
+  `(doto
+     (new ConstructorDeclaration
+          nil ; javadoc
+          ~(interpret-modifiers modifiers)
+          nil ;annotations
+          nil ;type parameters
+          ~(.toString method-name)
+          [ ~@(map #(apply interpret-parameter %1) param-list) ]
+          nil ;throws
+          ~(interpret-block body))))
+
 (defn interpret-body-decl-field [modifiers java-type & declarators]
   `(new FieldDeclaration
         ~(interpret-modifiers modifiers)
@@ -169,7 +181,7 @@
       (interpret-class-modifier-option (first-form-that-looks-like '(quote extends) class-modifier-options))
    })
 
-(defn interpret-class-decl [modifiers class-name & body-decls]
+(defn interpret-body-decl-class [modifiers class-name & body-decls]
   (let [ { :keys [class-modifier-options body-decls]} (snip-class-modifier-options-from-body-decls body-decls)
          { :keys [implements-list extends-list]} (interpret-class-modifier-options class-modifier-options)
         ]
@@ -187,7 +199,8 @@
 (def body-decl-interpreters
   { '(quote method) interpret-body-decl-method
     '(quote field)  interpret-body-decl-field
-    '(quote class)  interpret-class-decl
+    '(quote class)  interpret-body-decl-class
+    '(quote ctor)   interpret-body-decl-ctor
     })
 
 ; keep in mind that all body declarations share 2 things in common

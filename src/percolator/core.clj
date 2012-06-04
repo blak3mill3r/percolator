@@ -102,7 +102,7 @@
     ))
 
 (defmacro vomit-class-decl [& args]
-  `(println (wrap-a-class-kluge ~(apply interpret-class-decl args))))
+  `(println (wrap-a-class-kluge ~(apply interpret-body-decl-class args))))
 
 (defn add-two-to-s []
   '( '+= s 2 ))
@@ -126,6 +126,12 @@
          status
          []
            ( 'return "BAD" )))
+    ( 'ctor
+        #{:public}
+        "MyAss" ; FIXME shouldn't have to specify class name again here but it's not available ... this gets interpreted before interpret-body-decl-class is finished
+        [ (int x) (int y) ]
+          ( 'super 42 ) ; FIXME currently this is a super expression on the target 42, it should be an explicit call to super with the parameter 42
+          ( '. this doStuff 42 ))
     ( 'method
        #{:private :synchronized}
        java.lang.String<x>
