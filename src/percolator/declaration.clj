@@ -134,12 +134,6 @@
         ~(interpret-type java-type)
         [ ~@(map #(apply interpret-declarator %1) declarators) ] )) 
 
-(def body-decl-interpreters
-  { '(quote method) interpret-body-decl-method
-    '(quote field)  interpret-body-decl-field
-    '(quote class)  interpret-class-decl
-    })
-
 (defn interpret-body-decl [form]
   (let [ interpreter (body-decl-interpreters (first form))
          arguments   (drop 1 form) ]
@@ -147,18 +141,54 @@
       (apply interpreter arguments)
       (interpret-body-decl (eval form)))))
 
+(defn is-class-modifier-option [body-decl]
+  ( #{ '(quote implements) '(quote extends) } (first body-decl)))
+
+(defn snip-class-modifier-options-from-body-decls [body-decls]
+  {
+    :class-modifier-options
+    (keep #( when (is-class-modifier-option %1) %1 ) body-decls)
+    :body-decls
+    (keep #( when-not (is-class-modifier-option %1) %1 ) body-decls)
+   })
+
+(defn interpret-class-modifier-option [form]
+  (when form (map interpret-type (nthrest form 1))))
+
+(defn first-form-that-looks-like [first-form forms]
+  (some #( when ( = (first %1) first-form ) %1 ) forms))
+
+; class modifier options are forms that live in the class body forms
+; along with body-decls
+; but they aren't body-decls at all, they affect the enclosing class
+; used for implements and extends at the moment
+(defn interpret-class-modifier-options [class-modifier-options]
+  { :implements-list
+      (interpret-class-modifier-option (first-form-that-looks-like '(quote implements) class-modifier-options))
+    :extends-list
+      (interpret-class-modifier-option (first-form-that-looks-like '(quote extends) class-modifier-options))
+   })
 
 (defn interpret-class-decl [modifiers class-name & body-decls]
-  `( new ClassOrInterfaceDeclaration
-        nil ; javadoc
-        ~(interpret-modifiers modifiers)
-        nil ; annotations
-        false ; isInterface
-        ~(.toString class-name)
-        nil ; list of TypeParameter
-        nil ; extends list
-        nil ; implements list
-        [ ~@( map interpret-body-decl body-decls ) ] ))
+  (let [ { :keys [class-modifier-options body-decls]} (snip-class-modifier-options-from-body-decls body-decls)
+         { :keys [implements-list extends-list]} (interpret-class-modifier-options class-modifier-options)
+        ]
+    `( new ClassOrInterfaceDeclaration
+          nil ; javadoc
+          ~(interpret-modifiers modifiers)
+          nil ; annotations
+          false ; isInterface
+          ~(.toString class-name)
+          nil ; list of TypeParameter
+          [ ~@extends-list ]
+          [ ~@implements-list ]
+          [ ~@( map interpret-body-decl body-decls ) ] )))
+
+(def body-decl-interpreters
+  { '(quote method) interpret-body-decl-method
+    '(quote field)  interpret-body-decl-field
+    '(quote class)  interpret-class-decl
+    })
 
 ; keep in mind that all body declarations share 2 things in common
 ; they can have javadocs and they can have annotations

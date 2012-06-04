@@ -112,7 +112,9 @@
 
 ; Action!
 (vomit-class-decl
-  #{:public} FlashCard ; fixme implements EntryPoint
+  #{:public} MyAss ; fixme implements EntryPoint
+    ( 'implements Shit Fart )
+    ( 'extends Butt )
     ( 'field #{:volatile} int (x) (y) (z))
 
     ( 'class #{:public} MyInnerFuckingClass
