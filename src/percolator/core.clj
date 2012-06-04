@@ -112,11 +112,18 @@
 
 ; Action!
 (vomit-class-decl
-  #{:public :final} "MySickClass"
+  #{:public} FlashCard ; fixme implements EntryPoint
     ( 'field #{:volatile} int (x) (y) (z))
 
-    ( 'class #{:public} "MyInnerFuckingClass"
-      ( 'field #{:private} String (label) ))
+    ( 'class #{:public} MyInnerFuckingClass
+      ( 'field #{:private} String (label) )
+
+      ( 'method
+         #{:public}
+         int
+         status
+         []
+           ( 'return "BAD" )))
     ( 'method
        #{:private :synchronized}
        java.lang.String<x>
@@ -128,7 +135,7 @@
          ( 'break )
          ( 'continue )
          ( 'throw 42 )
-         ( '. Something/foo bar "baz" )
+         ( '. Something/foo bar baz )
          ( 'if ( '== 2 3 ) (('return)) (('return false)))
          ( '< 1 2 )
          ( 'return (+ 3 2))

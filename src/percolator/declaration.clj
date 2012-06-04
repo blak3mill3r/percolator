@@ -124,7 +124,7 @@
      (new MethodDeclaration
           ~(interpret-modifiers modifiers)
           ~(interpret-type return-type)
-          ~method-name
+          ~(.toString method-name)
           [ ~@(map #(apply interpret-parameter %1) param-list) ] )
      (.setBody ~(interpret-block body))))
 
@@ -154,7 +154,7 @@
         ~(interpret-modifiers modifiers)
         nil ; annotations
         false ; isInterface
-        ~class-name
+        ~(.toString class-name)
         nil ; list of TypeParameter
         nil ; extends list
         nil ; implements list
