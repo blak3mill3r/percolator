@@ -158,6 +158,17 @@
             ~(interpret-block if-block)
             nil))))
 
+(defn interpret-statement-while [condition & body]
+  `(new WhileStmt
+        ~(interpret-expression condition)
+        ~(interpret-block body)))
+
+
+(defn interpret-statement-do-while [condition & body]
+  `(new DoStmt
+        ~(interpret-block body)
+        ~(interpret-expression condition)))
+
 (def statement-interpreters
   { '(quote return)   interpret-statement-return
     '(quote break)    interpret-statement-break
@@ -167,6 +178,8 @@
     '(quote for)      interpret-statement-for
     '(quote foreach)  interpret-statement-foreach
     '(quote if)       interpret-statement-if
+    '(quote while)    interpret-statement-while
+    '(quote do-while) interpret-statement-do-while
     })
 
 (defn interpret-statement [form]
@@ -184,22 +197,3 @@
 
 ; TODO try
 ;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {
-
-;(defmethod interpret-statement '(quote while) [form]
-;  (let [ condition  (interpret-expression (nth form 1))
-;         body       (interpret-block (nthrest form 2))
-;         ]
-;    `(new WhileStmt ~condition ~body)))
-;
-;(defmethod interpret-statement '(quote do-while) [form]
-;  (let [ condition  (interpret-expression (nth form 1))
-;         body       (interpret-block (nthrest form 2))
-;         ]
-;    `(new DoStmt ~body ~condition)))
-;
-;    ;public WhileStmt(Expression condition, Statement body) {
-;
-;(defmethod interpret-statement :default [form]
-;  `(new ExpressionStmt ~(interpret-expression form)))
-;
-
