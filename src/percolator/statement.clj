@@ -134,7 +134,7 @@
 
 (defn interpret-statement-for [init condition update & body-statements]
   `(new ForStmt
-        [ ~(interpret-expression init) ]
+        [~(apply interpret-expression-variable-declaration init) ]
         ~(interpret-expression condition)
         [ ~(interpret-expression update) ]
         ~(interpret-block body-statements)
