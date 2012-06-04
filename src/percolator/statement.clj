@@ -146,6 +146,18 @@
         ~(interpret-expression iterable)
         ~(interpret-block body-statements)))
 
+(defn interpret-statement-if [condition if-block & else-block]
+  (let [ else-block (first else-block) ] 
+    (if else-block
+      `(new IfStmt
+            ~(interpret-expression condition)
+            ~(interpret-block if-block)
+            ~(interpret-block else-block))
+      `(new IfStmt
+            ~(interpret-expression condition)
+            ~(interpret-block if-block)
+            nil))))
+
 (def statement-interpreters
   { '(quote return)   interpret-statement-return
     '(quote break)    interpret-statement-break
@@ -154,6 +166,7 @@
     '(quote switch)   interpret-statement-switch
     '(quote for)      interpret-statement-for
     '(quote foreach)  interpret-statement-foreach
+    '(quote if)       interpret-statement-if
     })
 
 (defn interpret-statement [form]
@@ -172,17 +185,6 @@
 ; TODO try
 ;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {
 
-;(defmethod interpret-statement '(quote if) [form]
-;  (let [ condition (interpret-expression (nth form 1))
-;         if-block  (interpret-block (nth form 2))
-;         else-block (interpret-block (first (nthrest form 3)))
-;         ]
-;    (if else-block
-;      `(new IfStmt ~condition ~if-block ~else-block)
-;      `(new IfStmt ~condition ~if-block nil)
-;      )
-;    ))
-;
 ;(defmethod interpret-statement '(quote while) [form]
 ;  (let [ condition  (interpret-expression (nth form 1))
 ;         body       (interpret-block (nthrest form 2))

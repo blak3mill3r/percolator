@@ -142,6 +142,7 @@
          ;( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
          ;( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
          ;( 'new Shit<int> ( 'new Ass 5 ) )
+         ( 'if ('== ( '. this getStatus ) "bad") (('break)))
          ( 'local #{:volatile} int (x 3) (y 4) (z))
          ;( 'do-while ( '< x 3 )
          ;  ( '. System/out println "doin stuff" )
