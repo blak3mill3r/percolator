@@ -59,43 +59,43 @@
                                SynchronizedStmt                      ; NOTYET
                                ThrowStmt                             ; done
                                TryStmt                               ; NOTYET
-                               TypeDeclarationStmt 
+                               TypeDeclarationStmt                   ; TODO <---------------------------------
                                WhileStmt                             ; done
                                )
 (japa.parser.ast.expr AnnotationExpr
-                               ArrayAccessExpr 
-                               ArrayCreationExpr 
-                               ArrayInitializerExpr 
+                               ArrayAccessExpr                  ; TODO
+                               ArrayCreationExpr                ; TODO
+                               ArrayInitializerExpr             ; TODO
                                AssignExpr                       ; done
                                AssignExpr$Operator              ; done
                                BinaryExpr                       ; done
                                BinaryExpr$Operator              ; done
                                BooleanLiteralExpr               ; done
-                               CastExpr 
+                               CastExpr                         ; TODO think of a syntax
                                CharLiteralExpr                  ; done
                                ClassExpr                        ; wtf
-                               ConditionalExpr                  ; aka ternary TODO do if statement first
+                               ConditionalExpr                  ; aka ternary TODO
                                DoubleLiteralExpr                ; done
                                EnclosedExpr                     ; wtf
                                FieldAccessExpr                  ; done-ish with special /-in-a-symbol syntax (only possible if target is a NameExpr)
-                               InstanceOfExpr 
+                               InstanceOfExpr                   ; TODO
                                IntegerLiteralExpr               ; not possible everything is a long, no biggie
                                IntegerLiteralMinValueExpr       ; wtf
                                LiteralExpr                      ; abstract
                                LongLiteralExpr                  ; done-ish ... better type inference from clojure primitives
                                LongLiteralMinValueExpr          ; wtf
-                               MarkerAnnotationExpr 
+                               MarkerAnnotationExpr             ; wtf
                                MethodCallExpr                   ; done (anything missing?)
                                NameExpr                         ; done
                                NormalAnnotationExpr             ; wtf
                                NullLiteralExpr                  ; done
                                ObjectCreationExpr               ; done-ish, doesn't support outer/inner classes
                                QualifiedNameExpr                ; done-ish with the /-in-a-symbol syntax
-                               SingleMemberAnnotationExpr 
+                               SingleMemberAnnotationExpr       ; wtf
                                StringLiteralExpr                ; done
                                SuperExpr                        ; done
                                ThisExpr                         ; done
-                               UnaryExpr                        ; FIXME TODO
+                               UnaryExpr                        ; done
                                UnaryExpr$Operator               ; done
                                VariableDeclarationExpr          ; done-ish? can do a simple local variable ... lacking array types
                                )
