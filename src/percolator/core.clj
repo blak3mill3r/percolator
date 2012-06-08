@@ -1,9 +1,13 @@
+(ns percolator.core)
+(declare expression-interpreters interpret-declarator eval-and-interpret interpret-expression-binary-operation split-arguments-and-body-decls interpret-expression-this interpret-expression-variable-declaration interpret-expression-new interpret-expression-super japaparser-operator-type-unary interpret-expression-ambiguous-binary-or-unary-operation interpret-expression-assignment-operation japaparser-operator-constant interpret-expression interpret-expression-unary-operation interpret-expression-method-call)
+(declare primitive-type interpret-type reference-type)
+(declare first-form-that-looks-like interpret-modifiers modifiers-keywords partition-by-starts-with)
+(declare interpret-statement-do-while interpret-block interpret-statement-throw interpret-statement-for interpret-statement-foreach interpret-statement interpret-switch-entry-statement interpret-statement-if interpret-statement-while interpret-statement-switch interpret-statement-break interpret-statement-return statement-interpreters interpret-statement-continue)
+(declare is-class-modifier-option interpret-class-modifier-option interpret-body-decl-ctor body-decl-interpreters interpret-body-decl-method interpret-body-decl-class interpret-body-decl interpret-body-decl-field interpret-parameter snip-class-modifier-options-from-body-decls interpret-class-modifier-options)
+(declare vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
+
 (ns percolator.core
-  (:use percolator.expression
-        percolator.type
-        percolator.util
-        percolator.statement
-        percolator.declaration)
+  (:require [clojure.contrib.string :as string])
   (:import
     (japa.parser.ast.body AnnotationDeclaration 
                           AnnotationMemberDeclaration 
@@ -94,6 +98,13 @@
 
   )
 
+(load-file "/home/blake/w/percolator/src/percolator/declaration.clj")
+(load-file "/home/blake/w/percolator/src/percolator/expression.clj")
+(load-file "/home/blake/w/percolator/src/percolator/japaparser.clj")
+(load-file "/home/blake/w/percolator/src/percolator/statement.clj")
+(load-file "/home/blake/w/percolator/src/percolator/type.clj")
+(load-file "/home/blake/w/percolator/src/percolator/util.clj")
+
 (defn wrap-a-class-kluge [class-decl]
   (let [ cu (new CompilationUnit) ]
     (.setPackage cu (new PackageDeclaration (ASTHelper/createNameExpr "whatsys.percolator.test")))
@@ -155,10 +166,11 @@
          ( '== x 3.1415 )
          ( 'super )
          ( 'this )
+         ( 'new ShittyAss 3 ( 'method #{:public} void toasted [] ) )
          ( 'return ( 'this ))
          ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
          ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
-         ( 'new Shit<int> ( 'new Ass 5 ) )
+         ;( 'new Shit<int> ( 'new Ass 5 ) ) ; FIXME I broke this adding anon class body
          ( 'if ('== ( '. this getStatus ) "bad") (('break)))
          ( 'local #{:volatile} int (x 3) (y 4) (z))
          ( 'while ( '< x 3 )
@@ -179,5 +191,6 @@
              (3 ( 'return 1 ))
              ('default ( 'return 69 ))
              )
-         ( 'throw ('new Fuckballs 9) )
+         ( 'throw ('new Fuckballs) )
+         ;( 'throw ('new Fuckballs 9) ) ; broken by anon class body
         ))

@@ -1,3 +1,12 @@
+fixing namespace issue
+
+only need 1 namespace for this
+use load and in-ns
+and declare
+
+for expression:
+(expression-interpreters interpret-declarator eval-and-interpret interpret-expression-binary-operation split-arguments-and-body-decls interpret-expression-this interpret-expression-variable-declaration interpret-expression-new interpret-expression-super japaparser-operator-type-unary interpret-expression-ambiguous-binary-or-unary-operation interpret-expression-assignment-operation japaparser-operator-constant interpret-expression interpret-expression-unary-operation interpret-expression-method-call)
+
 macro goodness
 make it easy to express java syntax
 interpolating clojure variables as constants in java source and such

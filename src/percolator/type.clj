@@ -1,17 +1,4 @@
-(ns percolator.type
-  (:import
-
-(japa.parser ASTHelper)
-( japa.parser.ast.type ClassOrInterfaceType 
-                                PrimitiveType         ; a degrading term
-                                PrimitiveType$Primitive
-                                ReferenceType 
-                                Type
-                                VoidType              ; dude is going to build void rays
-                                WildcardType )
-    )
-  )
-
+(in-ns 'percolator.core)
 (def primitive-type
   { "boolean"   'ASTHelper/BOOLEAN_TYPE
     "char"      'ASTHelper/CHAR_TYPE

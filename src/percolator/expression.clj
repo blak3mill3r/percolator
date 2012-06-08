@@ -1,64 +1,4 @@
-(ns percolator.expression
-  (:require [clojure.contrib.string :as string])
-  (:import
-    (japa.parser.ast.body AnnotationDeclaration 
-                          AnnotationMemberDeclaration 
-                          ClassOrInterfaceDeclaration 
-                          ConstructorDeclaration 
-                          EmptyMemberDeclaration 
-                          EmptyTypeDeclaration 
-                          EnumConstantDeclaration 
-                          EnumDeclaration 
-                          FieldDeclaration 
-                          InitializerDeclaration 
-                          MethodDeclaration
-                          TypeDeclaration ; I think this is an abstract base
-                          ModifierSet     ; that's like public and private and static and abstract and synchronized and final and all that shit
-                          Parameter       ; as in a method declaration
-                          VariableDeclarator
-                          VariableDeclaratorId
-                          )
-(japa.parser.ast.expr AnnotationExpr
-                               ArrayAccessExpr 
-                               ArrayCreationExpr 
-                               ArrayInitializerExpr 
-                               AssignExpr                       ; done
-                               AssignExpr$Operator              ; done
-                               BinaryExpr                       ; done
-                               BinaryExpr$Operator              ; done
-                               BooleanLiteralExpr               ; done
-                               CastExpr 
-                               CharLiteralExpr                  ; done
-                               ClassExpr                        ; wtf
-                               ConditionalExpr                  ; aka ternary TODO do if statement first
-                               DoubleLiteralExpr                ; done
-                               EnclosedExpr                     ; wtf
-                               FieldAccessExpr                  ; done-ish with special /-in-a-symbol syntax (only possible if target is a NameExpr)
-                               InstanceOfExpr 
-                               IntegerLiteralExpr               ; not possible everything is a long, no biggie
-                               IntegerLiteralMinValueExpr       ; wtf
-                               LiteralExpr                      ; abstract
-                               LongLiteralExpr                  ; done-ish ... better type inference from clojure primitives
-                               LongLiteralMinValueExpr          ; wtf
-                               MarkerAnnotationExpr 
-                               MethodCallExpr                   ; done (anything missing?)
-                               NameExpr                         ; done
-                               NormalAnnotationExpr             ; wtf
-                               NullLiteralExpr                  ; done
-                               ObjectCreationExpr               ; done-ish, doesn't support outer/inner classes
-                               QualifiedNameExpr                ; done-ish with the /-in-a-symbol syntax
-                               SingleMemberAnnotationExpr 
-                               StringLiteralExpr                ; done
-                               SuperExpr                        ; done
-                               ThisExpr                         ; done
-                               UnaryExpr                        ; FIXME TODO
-                               UnaryExpr$Operator               ; done
-                               VariableDeclarationExpr          ; done-ish? can do a simple local variable ... lacking array types
-                               )
-    )
-  (:use percolator.type
-        percolator.util)
-  )
+(in-ns 'percolator.core)
 
 ; symbol aliases
 ; which resolves to an Operator constant from japaparser
@@ -133,12 +73,23 @@
     `(new NameExpr ~(.toString symbol))
     ))
 
-(defn interpret-expression-new [type-name & arguments]
-  `(new ObjectCreationExpr
-      nil  ; FIXME this argument, scope, can be used for instantiating outer classes from inner classes
-      ~(interpret-type type-name)
-      [ ~@(map interpret-expression arguments) ]
-        ))
+(defn split-arguments-and-body-decls [forms]
+  (let [ arguments-and-body-decls
+        (reverse (partition-by-starts-with #{ '(quote field) '(quote method) } forms) ) ]
+    { :arguments (first (drop 1 arguments-and-body-decls))
+      :body-decls (first arguments-and-body-decls)
+      }))
+
+(defn interpret-expression-new [type-name & arguments-and-maybe-anonymous-class-body]
+  (let [{:keys [body-decls arguments]} (split-arguments-and-body-decls arguments-and-maybe-anonymous-class-body)]
+    `(doto
+       (new ObjectCreationExpr
+         nil  ; FIXME this argument, scope, can be used for instantiating outer classes from inner classes
+          ~(interpret-type type-name)
+          [ ~@(map interpret-expression arguments) ]
+          )
+        (.setAnonymousClassBody [ ~@( map interpret-body-decl body-decls ) ])
+      )))
 
 (defn interpret-expression-this [] `(new ThisExpr))
 
@@ -273,17 +224,3 @@
     (if expression-interpreter
       ( apply expression-interpreter interpreter-arguments )
       (interpret-expression (eval form)))))
-
-(comment 
-(interpret-expression 'Balls/cow)
-(interpret-expression 23)
-(interpret-expression
-'('. cow moo "holy fuckin shit")
-  )
-(interpret-expression
-  '( '. System/out println "yes" ))
-(interpret-expression '(+ 2 3))
-(interpret-expression '( '<= 1 2 ))
-  )
-
-

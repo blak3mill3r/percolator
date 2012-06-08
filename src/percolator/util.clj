@@ -1,24 +1,24 @@
-(ns percolator.util
-  (:import
-    (japa.parser.ast.body AnnotationDeclaration 
-                          AnnotationMemberDeclaration 
-                          ClassOrInterfaceDeclaration 
-                          ConstructorDeclaration 
-                          EmptyMemberDeclaration 
-                          EmptyTypeDeclaration 
-                          EnumConstantDeclaration 
-                          EnumDeclaration 
-                          FieldDeclaration 
-                          InitializerDeclaration 
-                          MethodDeclaration
-                          TypeDeclaration ; I think this is an abstract base
-                          ModifierSet     ; that's like public and private and static and abstract and synchronized and final and all that shit
-                          Parameter       ; as in a method declaration
-                          VariableDeclarator
-                          VariableDeclaratorId
-                          )
-    )
-  )
+(in-ns 'percolator.core)
+; give it a predicate and a coll of forms
+; it returns the first form in the collection
+; whose first element passes the predicate
+(defn first-form-that-looks-like [predicate forms]
+  (some
+    #(when
+       (when
+         (seq? %1)
+         (predicate (first %1)))
+       %1)
+    forms))
+
+(defn partition-by-starts-with [predicate forms]
+  (partition-by
+    #(when
+       (when
+         (seq? %1)
+         (predicate (first %1)))
+       %1)
+    forms))
 
 (def modifiers-keywords
   { :public         ModifierSet/PUBLIC
