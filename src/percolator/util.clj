@@ -1,24 +1,17 @@
 (in-ns 'percolator.core)
+
+(defn first-matches [predicate]
+  (fn [coll] 
+    (when (when (seq? coll) (predicate (first coll))) coll)))
+
 ; give it a predicate and a coll of forms
 ; it returns the first form in the collection
 ; whose first element passes the predicate
 (defn first-form-that-looks-like [predicate forms]
-  (some
-    #(when
-       (when
-         (seq? %1)
-         (predicate (first %1)))
-       %1)
-    forms))
+  (some (first-matches predicate) forms))
 
 (defn partition-by-starts-with [predicate forms]
-  (partition-by
-    #(when
-       (when
-         (seq? %1)
-         (predicate (first %1)))
-       %1)
-    forms))
+  (partition-by (first-matches predicate) forms))
 
 (def modifiers-keywords
   { :public         ModifierSet/PUBLIC
