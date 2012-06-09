@@ -1,10 +1,10 @@
 (ns percolator.core)
-(declare expression-interpreters interpret-declarator eval-and-interpret interpret-expression-binary-operation split-arguments-and-body-decls interpret-expression-this interpret-expression-variable-declaration interpret-expression-new interpret-expression-super japaparser-operator-type-unary interpret-expression-ambiguous-binary-or-unary-operation interpret-expression-assignment-operation japaparser-operator-constant interpret-expression interpret-expression-unary-operation interpret-expression-method-call)
-(declare primitive-type interpret-type reference-type)
-(declare first-form-that-looks-like interpret-modifiers modifiers-keywords partition-by-starts-with)
-(declare interpret-statement-do-while interpret-block interpret-statement-throw interpret-statement-for interpret-statement-foreach interpret-statement interpret-switch-entry-statement interpret-statement-if interpret-statement-while interpret-statement-switch interpret-statement-break interpret-statement-return statement-interpreters interpret-statement-continue)
-(declare is-class-modifier-option interpret-class-modifier-option interpret-body-decl-ctor body-decl-interpreters interpret-body-decl-method interpret-body-decl-class interpret-body-decl interpret-body-decl-field interpret-parameter snip-class-modifier-options-from-body-decls interpret-class-modifier-options)
-(declare vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
+(declare expression-interpreters interpret-declarator eval-and-interpret interpret-expression-binary-operation split-arguments-and-body-decls interpret-expression-this interpret-expression-variable-declaration interpret-expression-new interpret-expression-super japaparser-operator-type-unary interpret-expression-ambiguous-binary-or-unary-operation interpret-expression-assignment-operation japaparser-operator-constant interpret-expression interpret-expression-unary-operation interpret-expression-method-call
+primitive-type interpret-type reference-type
+first-form-that-looks-like interpret-modifiers modifiers-keywords partition-by-starts-with
+interpret-statement-do-while interpret-block interpret-statement-throw interpret-statement-for interpret-statement-foreach interpret-statement interpret-switch-entry-statement interpret-statement-if interpret-statement-while interpret-statement-switch interpret-statement-break interpret-statement-return statement-interpreters interpret-statement-continue
+is-class-modifier-option interpret-class-modifier-option interpret-body-decl-ctor body-decl-interpreters interpret-body-decl-method interpret-body-decl-class interpret-body-decl interpret-body-decl-field interpret-parameter snip-class-modifier-options-from-body-decls interpret-class-modifier-options
+vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
 
 (ns percolator.core
   (:require [clojure.contrib.string :as string])
@@ -28,7 +28,8 @@
                           )
 (japa.parser ASTHelper)
 (japa.parser.ast CompilationUnit
-                 PackageDeclaration)
+                 PackageDeclaration
+                 ImportDeclaration)
 (japa.parser.ast.stmt AssertStmt                            ; NOTYET
                                BlockStmt                             ; used, perhaps need a syntax for anonymous blocks
                                BreakStmt                             ; done, doesn't support identifying them uniquely which I think is only useful if you're using javaparser for modifying existing ASTs
@@ -105,15 +106,21 @@
 (load-file "/home/blake/w/percolator/src/percolator/type.clj")
 (load-file "/home/blake/w/percolator/src/percolator/util.clj")
 
-(defn wrap-a-class-kluge [class-decl]
-  (let [ cu (new CompilationUnit) ]
-    (.setPackage cu (new PackageDeclaration (ASTHelper/createNameExpr "whatsys.percolator.test")))
-    (ASTHelper/addTypeDeclaration cu class-decl)
-    (.toString cu)
+    ;public CompilationUnit(
+;PackageDeclaration pakage,
+;List<ImportDeclaration> imports,
+;List<TypeDeclaration> types,
+;List<Comment> comments) {
+(defmacro wrap-a-class-kluge [package-decl import-decls class-decl]
+  `(new CompilationUnit
+    ~(interpret-package-declaration package-decl)
+    [~@(map interpret-import-decl import-decls)]
+    [~class-decl]
+    [] ;comments
     ))
 
-(defmacro vomit-class-decl [& args]
-  `(println (wrap-a-class-kluge ~(apply interpret-body-decl-class args))))
+(defmacro class-decl [& args]
+  (apply interpret-body-decl-class args))
 
 (defn add-two-to-s []
   '( '+= s 2 ))
@@ -122,8 +129,11 @@
   '( 'return false ))
 
 ; Action!
-(vomit-class-decl
-  #{:public} MyAss ; fixme implements EntryPoint
+(wrap-a-class-kluge
+  com.whatsys.test
+  [com.somelib.util java.lang.* java.util.*]
+  (class-decl
+  #{:public} MyAss
     ( 'implements Shit Fart )
     ( 'extends Butt )
     ( 'field #{:volatile} int (x) (y) (z))
@@ -193,4 +203,4 @@
              )
          ( 'throw ('new Fuckballs) )
          ;( 'throw ('new Fuckballs 9) ) ; broken by anon class body
-        ))
+        )))

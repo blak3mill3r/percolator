@@ -1,6 +1,19 @@
 (in-ns 'percolator.core)
 (declare body-decl-interpreters)
 
+(defn interpret-package-declaration [form]
+  `(new PackageDeclaration ~(interpret-expression form)))
+
+(defn interpret-import-decl [form]
+  `(new ImportDeclaration
+      ~(interpret-expression form) false false))
+
+(apply interpret-import-decl '(
+ duck.balls.woot.*
+    )
+  )
+
+
 (defn interpret-parameter [param-type param-name & array-count-or-varargs]
   (let [ param-type             (reference-type (interpret-type param-type))
          param-name             (.toString param-name)
@@ -81,8 +94,8 @@
           false ; isInterface
           ~(.toString class-name)
           nil ; list of TypeParameter
-          [ ~@extends-list ]
-          [ ~@implements-list ]
+          ~( when-not (empty? extends-list)    `[ ~@extends-list ])
+          ~( when-not (empty? implements-list) `[ ~@implements-list ])
           [ ~@( map interpret-body-decl body-decls ) ] )))
 
 (def body-decl-interpreters
