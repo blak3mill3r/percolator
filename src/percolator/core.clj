@@ -48,7 +48,7 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
                                SynchronizedStmt                      ; NOTYET
                                ThrowStmt                             ; done
                                TryStmt                               ; NOTYET
-                               TypeDeclarationStmt 
+                               TypeDeclarationStmt                   ; done
                                WhileStmt                             ; done
                                )
 (japa.parser.ast.expr AnnotationExpr
@@ -156,7 +156,7 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
 
     ( 'field #{:private :static :final} String (SERVER_ERROR "D'oh!") )
 
-    ( 'field #{:private :final} GreetingServiceAsync (greetingService ( '. GWT create ( 'class GreetingService ) )) )
+    ( 'field #{:private :final} GreetingServiceAsync (greetingService ( '. GWT create ( 'class-expr GreetingService ) )) )
 
     ( 'method #{:public} void onModuleLoad []
       ( 'local #{:final} Button  (sendButton ('new Button "Send")) )
@@ -203,21 +203,40 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
                ( '. sendButton setFocus true )
                )))
 
-      ;( 'class #{} MyHandler
-      ;    ( 'implements ClickHandler KeyUpHandler )
+      ( 'class #{} MyHandler
+          ( 'implements ClickHandler KeyUpHandler )
 
-      ;    ( 'method #{:public} void onClick [ (ClickEvent e) ]
-      ;      ( '. this sendNameToServer ))
+          ( 'method #{:public} void onClick [ (ClickEvent e) ]
+            ( '. this sendNameToServer ))
 
-      ;    ( 'method #{:public} void onKeyUp [ (KeyUpEvent e) ]
-      ;      ( 'if ( '== ( '. event getNativeKeyCode ) KeyCodes/KEY_ENTER )
-      ;          ('. this sendNameToServer )))
+          ( 'method #{:public} void onKeyUp [ (KeyUpEvent e) ]
+            ( 'if ( '== ( '. event getNativeKeyCode ) KeyCodes/KEY_ENTER )
+              (('. this sendNameToServer ))))
 
-      ;    ( 'method #{:public} void sendNameToServer []
-      ;      ( '. errorLabel setText "" )
-      ;      ( 'local #{} String (textToServer ('. nameField getText)) )
-      ;        )
+          ( 'method #{:public} void sendNameToServer []
+            ( '. errorLabel setText "" )
+            ( 'local #{} String (textToServer ('. nameField getText)) )
+            ( 'if ('! ('. FieldVerifier isValidName textToServer))
+                ( ('. errorLabel setText "Please do the thing right")
+                  ( 'return )))
 
-      ;    )
+            ( '. sendButton setEnabled false )
+            ( '. textToServerLabel setText textToServer )
+            ( '. serverResponseLabel setText "" )
+            ( '. greetingService greetServer textToServer
+              ('new AsyncCallback<String>
+                 ('method #{:public} void onFailure [(Throwable e)]
+                    ( '. dialogBox setText "RPC FAIL SAUCE" )
+                    ( '. serverResponseLabel addStyleName "serverResponseLabelError" )
+                    ( '. serverResponseLabel setHTML SERVER_ERROR )
+                    ( '. dialogBox center )
+                    ( '. closeButton setFocus true ))
+                 ('method #{:public} void onSuccess [(String result)]
+                    ( '. dialogBox setText "RPC Success Sauce (hax)" )
+                    ( '. serverResponseLabel removeStyleName "serverResponseLabelError" )
+                    ( '. serverResponseLabel setHTML result )
+                    ( '. dialogBox center )
+                    ( '. closeButton setFocus true ))))
+              )
+          )
         )))
-

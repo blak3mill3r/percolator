@@ -75,7 +75,10 @@
 
 (defn split-arguments-and-body-decls [forms]
   (let [ arguments-and-body-decls
-        (partition-by-starts-with #{ '(quote field) '(quote method) } forms) ]
+         (partition-by
+           #( boolean ( (first-matches #{ '(quote field) '(quote method) })
+                        %1 ))
+          forms) ]
     (if (and (= 1 (count arguments-and-body-decls))
              (some (first-matches #{ '(quote field) '(quote method) }) (first arguments-and-body-decls )))
       { :body-decls (first arguments-and-body-decls) }
@@ -215,7 +218,7 @@
     ; local variable declaration
     '(quote local ) interpret-expression-variable-declaration
     ; class expression, i.e. Something.class
-    '(quote class ) interpret-expression-class
+    '(quote class-expr ) interpret-expression-class
     })
 
 ; eval-and-interpret is the default

@@ -62,6 +62,9 @@
         ~(interpret-block body)
         ~(interpret-expression condition)))
 
+(defn interpret-statement-decl-class [& forms]
+  `(new TypeDeclarationStmt ~( apply interpret-body-decl-class forms )))
+
 (def statement-interpreters
   { '(quote return)   interpret-statement-return
     '(quote break)    interpret-statement-break
@@ -73,6 +76,8 @@
     '(quote if)       interpret-statement-if
     '(quote while)    interpret-statement-while
     '(quote do-while) interpret-statement-do-while
+    ; class type declaration statement
+    '(quote class) interpret-statement-decl-class
     })
 
 (defn interpret-statement [form]
