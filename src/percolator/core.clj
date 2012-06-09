@@ -157,5 +157,9 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
     ( 'field #{:private :static :final} String (SERVER_ERROR "D'oh!") )
 
     ( 'field #{:private :final} GreetingServiceAsync (greetingService ( '. GWT create ( 'class GreetingService ) )) )
+
+    ( 'method #{:public} void onModuleLoad []
+      ( 'local #{:final} Button (sendButton ('new Button "Send")) )
+        )
     ))
 

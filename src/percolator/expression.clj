@@ -76,9 +76,13 @@
 (defn split-arguments-and-body-decls [forms]
   (let [ arguments-and-body-decls
         (reverse (partition-by-starts-with #{ '(quote field) '(quote method) } forms) ) ]
-    { :arguments (first (drop 1 arguments-and-body-decls))
-      :body-decls (first arguments-and-body-decls)
-      }))
+    (if (= 1 (count arguments-and-body-decls))
+      { :arguments (first arguments-and-body-decls)
+        :body-decls nil
+       }
+      { :arguments (first (drop 1 arguments-and-body-decls))
+        :body-decls (first arguments-and-body-decls)
+        })))
 
 (defn interpret-expression-new [type-name & arguments-and-maybe-anonymous-class-body]
   (let [{:keys [body-decls arguments]} (split-arguments-and-body-decls arguments-and-maybe-anonymous-class-body)]
@@ -88,7 +92,7 @@
           ~(interpret-type type-name)
           [ ~@(map interpret-expression arguments) ]
           )
-        (.setAnonymousClassBody [ ~@( map interpret-body-decl body-decls ) ])
+        (.setAnonymousClassBody ~( when body-decls `[ ~@( map interpret-body-decl body-decls ) ] ))
       )))
 
 (defn interpret-expression-this [] `(new ThisExpr))
