@@ -8,12 +8,6 @@
   `(new ImportDeclaration
       ~(interpret-expression form) false false))
 
-(apply interpret-import-decl '(
- duck.balls.woot.*
-    )
-  )
-
-
 (defn interpret-parameter [param-type param-name & array-count-or-varargs]
   (let [ param-type             (reference-type (interpret-type param-type))
          param-name             (.toString param-name)
