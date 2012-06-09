@@ -62,7 +62,7 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
                                BooleanLiteralExpr               ; done
                                CastExpr 
                                CharLiteralExpr                  ; done
-                               ClassExpr                        ; wtf
+                               ClassExpr                        ; done
                                ConditionalExpr                  ; aka ternary TODO do if statement first
                                DoubleLiteralExpr                ; done
                                EnclosedExpr                     ; wtf
@@ -159,7 +159,65 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
     ( 'field #{:private :final} GreetingServiceAsync (greetingService ( '. GWT create ( 'class GreetingService ) )) )
 
     ( 'method #{:public} void onModuleLoad []
-      ( 'local #{:final} Button (sendButton ('new Button "Send")) )
-        )
-    ))
+      ( 'local #{:final} Button  (sendButton ('new Button "Send")) )
+      ( 'local #{:final} TextBox (nameField ('new TextBox)) )
+      ( '. nameField setText "GWT User" )
+      ( 'local #{:final} Label (errorLabel ('new Label)) )
+      ( '. sendButton addStyleName "sendButton" )
+
+      ( '.  ( '. RootPanel get "nameFieldContainer"  ) add nameField )
+      ( '.  ( '. RootPanel get "sendButtonContainer" ) add sendButton )
+      ( '.  ( '. RootPanel get "errorLabelContainer" ) add errorLabel )
+
+      ( '. nameField setFocus true )
+      ( '. nameField selectAll )
+
+      ( 'local #{:final} DialogBox (dialogBox ('new DialogBox)) )
+
+      ( '. dialogBox setText "RPC" )
+      ( '. dialogBox setAnimationEnabled true )
+
+      ( 'local #{:final} Button ( closeButton ('new Button "Close"))  )
+
+      ( '. ( '. closeButton getElement ) setId "closeButton" )
+
+      ( 'local #{:final} Label ( textToServerLabel ( 'new Label )) )
+      ( 'local #{:final} HTML ( serverResponseLabel ( 'new HTML )) )
+
+      ( 'local #{} VerticalPanel ( dialogVPanel ( 'new VerticalPanel )) )
+
+      ( '. dialogVPanel addStyleName "dialogVPanel" )
+      ( '. dialogVPanel add ( 'new HTML "<b> Sending name to the server: </b>" ) )
+      ( '. dialogVPanel add textToServerLabel )
+      ( '. dialogVPanel add ( 'new HTML "<br><b> Server replies: </b>" ) )
+      ( '. dialogVPanel add serverResponseLabel )
+      ( '. dialogVPanel setHorizontalAlignment VerticalPanel/ALIGN_RIGHT )
+
+      ( '. dialogBox setWidget dialogVPanel )
+
+      ( '. closeButton addClickHandler
+          ('new ClickHandler
+             ( 'method #{:public} void onClick [ (ClickEvent e) ]
+               ( '. dialogBox hide )
+               ( '. sendButton setEnabled true )
+               ( '. sendButton setFocus true )
+               )))
+
+      ;( 'class #{} MyHandler
+      ;    ( 'implements ClickHandler KeyUpHandler )
+
+      ;    ( 'method #{:public} void onClick [ (ClickEvent e) ]
+      ;      ( '. this sendNameToServer ))
+
+      ;    ( 'method #{:public} void onKeyUp [ (KeyUpEvent e) ]
+      ;      ( 'if ( '== ( '. event getNativeKeyCode ) KeyCodes/KEY_ENTER )
+      ;          ('. this sendNameToServer )))
+
+      ;    ( 'method #{:public} void sendNameToServer []
+      ;      ( '. errorLabel setText "" )
+      ;      ( 'local #{} String (textToServer ('. nameField getText)) )
+      ;        )
+
+      ;    )
+        )))
 

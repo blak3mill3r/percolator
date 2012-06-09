@@ -75,13 +75,12 @@
 
 (defn split-arguments-and-body-decls [forms]
   (let [ arguments-and-body-decls
-        (reverse (partition-by-starts-with #{ '(quote field) '(quote method) } forms) ) ]
-    (if (= 1 (count arguments-and-body-decls))
+        (partition-by-starts-with #{ '(quote field) '(quote method) } forms) ]
+    (if (and (= 1 (count arguments-and-body-decls))
+             (some (first-matches #{ '(quote field) '(quote method) }) (first arguments-and-body-decls )))
+      { :body-decls (first arguments-and-body-decls) }
       { :arguments (first arguments-and-body-decls)
-        :body-decls nil
-       }
-      { :arguments (first (drop 1 arguments-and-body-decls))
-        :body-decls (first arguments-and-body-decls)
+        :body-decls (first (drop 1 arguments-and-body-decls))
         })))
 
 (defn interpret-expression-new [type-name & arguments-and-maybe-anonymous-class-body]
