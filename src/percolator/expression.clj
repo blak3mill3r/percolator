@@ -158,6 +158,9 @@
   (interpret-expression "DIDNT MATCH SYNTAX"))
   )
 
+(defn interpret-expression-class [java-type]
+  `(new ClassExpr ~(interpret-type java-type)))
+
 ; this is kinda the central point of definition of the syntax of this library
 ; it associates first-elements of clojure forms
 ; with functions which interpret those forms as various Java-AST-constructing macros
@@ -208,6 +211,8 @@
     '(quote new)   interpret-expression-new
     ; local variable declaration
     '(quote local ) interpret-expression-variable-declaration
+    ; class expression, i.e. Something.class
+    '(quote class ) interpret-expression-class
     })
 
 ; eval-and-interpret is the default

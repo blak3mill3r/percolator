@@ -130,77 +130,32 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
 
 ; Action!
 (wrap-a-class-kluge
-  com.whatsys.test
-  [com.somelib.util java.lang.* java.util.*]
+  com.whatsys.test.client
+  [ com.whatsys.test.shared.FieldVerifier
+    com.google.gwt.core.client.EntryPoint
+    com.google.gwt.core.client.GWT
+    com.google.gwt.event.dom.client.ClickEvent
+    com.google.gwt.event.dom.client.ClickHandler
+    com.google.gwt.event.dom.client.KeyCodes
+    com.google.gwt.event.dom.client.KeyUpEvent
+    com.google.gwt.event.dom.client.KeyUpHandler
+    com.google.gwt.user.client.rpc.AsyncCallback
+    com.google.gwt.user.client.ui.Button
+    com.google.gwt.user.client.ui.DialogBox
+    com.google.gwt.user.client.ui.HTML
+    com.google.gwt.user.client.ui.Label
+    com.google.gwt.user.client.ui.RootPanel
+    com.google.gwt.user.client.ui.TextBox
+    com.google.gwt.user.client.ui.VerticalPanel ]
+
   (class-decl
-  #{:public} MyAss
-    ( 'implements Shit Fart )
-    ( 'extends Butt )
-    ( 'field #{:volatile} int (x) (y) (z))
 
-    ( 'class #{:public} MyInnerFuckingClass
-      ( 'field #{:private} String (label) )
+  #{:public} Test
 
-      ( 'method
-         #{:public}
-         int
-         status
-         []
-           ( 'return "BAD" )))
-    ( 'ctor
-        #{:public}
-        "MyAss" ; FIXME shouldn't have to specify class name again here but it's not available ... this gets interpreted before interpret-body-decl-class is finished
-        [ (int x) (int y) ]
-          ( 'super 42 ) ; FIXME currently this is a super expression on the target 42, it should be an explicit call to super with the parameter 42
-          ( '. this doStuff 42 ))
-    ( 'method
-       #{:private :synchronized}
-       java.lang.String<x>
-       "headbang"
-       [(int x) (int y) (String args ...)]
-         ( '+= s 2 )
-         ( add-two-to-s )
-         ( return-false )
-         ( 'break )
-         ( 'continue )
-         ( 'throw 42 )
-         ( '. Something/foo bar baz )
-         ( 'if ( '== 2 3 ) (('return)) (('return false)))
-         ( '< 1 2 )
-         ( 'return (+ 3 2))
-         ( 'xor 1 2 )
-         ( '+= x 3 )
-         ( '< x nil )
-         ( '== x false )
-         ( '== x \f )
-         ( '== x 3.1415 )
-         ( 'super )
-         ( 'this )
-         ( 'new ShittyAss 3 ( 'method #{:public} void toasted [] ) )
-         ( 'return ( 'this ))
-         ( '* ('- 6 7) 4)      ; holy fuck japaparser does not preserve order of operations? LAME
-         ( '- 6 ('* 7 4))      ; holy fuck japaparser does not preserve order of operations? LAME
-         ;( 'new Shit<int> ( 'new Ass 5 ) ) ; FIXME I broke this adding anon class body
-         ( 'if ('== ( '. this getStatus ) "bad") (('break)))
-         ( 'local #{:volatile} int (x 3) (y 4) (z))
-         ( 'while ( '< x 3 )
-           ( '. System/out println "doin stuff" )
-           ( 'if ('== ( '. this getStatus ) "bad") (('break))))
-         ( 'continue )
-         ( 'do-while ( '< x 3 )
-           ( '. System/out println "doin stuff" )
-           ( 'if ('== ( '. this getStatus ) "bad") (('break))))
-         ( 'continue )
-         ( 'for ( #{} int (foo) ) ( '< x 5 ) ( '++ x )
-           ( '. System/out println x ))
-         ( 'foreach ( #{} int (foo) )
-           ( '. this someCollection )
-           ( '. foo someOperation )
-           )
-         ( 'switch ( '. foo someOperation )
-             (3 ( 'return 1 ))
-             ('default ( 'return 69 ))
-             )
-         ( 'throw ('new Fuckballs) )
-         ;( 'throw ('new Fuckballs 9) ) ; broken by anon class body
-        )))
+    ( 'implements EntryPoint )
+
+    ( 'field #{:private :static :final} String (SERVER_ERROR "D'oh!") )
+
+    ( 'field #{:private :final} GreetingServiceAsync (greetingService ( '. GWT create ( 'class GreetingService ) )) )
+    ))
+
