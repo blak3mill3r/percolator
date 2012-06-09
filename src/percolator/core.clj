@@ -239,4 +239,9 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
                     ( '. closeButton setFocus true ))))
               )
           )
+
+      ( 'local #{} MyHandler ( handler ('new MyHandler ) ) )
+      ( '. sendButton addClickHandler handler )
+      ( '. nameField addKeyUpHandler handler )
+
         )))
