@@ -99,12 +99,12 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
 
   )
 
+(load-file "/home/blake/w/percolator/src/percolator/util.clj")
 (load-file "/home/blake/w/percolator/src/percolator/declaration.clj")
 (load-file "/home/blake/w/percolator/src/percolator/expression.clj")
 (load-file "/home/blake/w/percolator/src/percolator/japaparser.clj")
 (load-file "/home/blake/w/percolator/src/percolator/statement.clj")
 (load-file "/home/blake/w/percolator/src/percolator/type.clj")
-(load-file "/home/blake/w/percolator/src/percolator/util.clj")
 
     ;public CompilationUnit(
 ;PackageDeclaration pakage,
@@ -210,7 +210,7 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
             ( '. this sendNameToServer ))
 
           ( 'method #{:public} void onKeyUp [ (KeyUpEvent e) ]
-            ( 'if ( '== ( '. event getNativeKeyCode ) KeyCodes/KEY_ENTER )
+            ( 'if ( '== ( '. e getNativeKeyCode ) KeyCodes/KEY_ENTER )
               (('. this sendNameToServer ))))
 
           ( 'method #{:public} void sendNameToServer []
@@ -240,7 +240,7 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
               )
           )
 
-      ( 'local #{} MyHandler ( handler ('new MyHandler ) ) )
+      ( 'local #{} MyHandler ( handler ('new MyHandler )))
       ( '. sendButton addClickHandler handler )
       ( '. nameField addKeyUpHandler handler )
 
