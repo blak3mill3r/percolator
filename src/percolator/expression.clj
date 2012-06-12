@@ -3,51 +3,51 @@
 ; symbol aliases
 ; which resolves to an Operator constant from japaparser
 (def japaparser-operator-constant
-  { '==      'BinaryExpr$Operator/equals
-    '!=      'BinaryExpr$Operator/notEquals
-    '<=      'BinaryExpr$Operator/lessEquals
-    '>=      'BinaryExpr$Operator/greaterEquals
-    '<       'BinaryExpr$Operator/less
-    '>       'BinaryExpr$Operator/greater
-    '<<      'BinaryExpr$Operator/lShift
-    '>>      'BinaryExpr$Operator/rSignedShift
-    '>>>     'BinaryExpr$Operator/rUnsignedShift
-    '+       'BinaryExpr$Operator/plus
-    '-       'BinaryExpr$Operator/minus
-    '*       'BinaryExpr$Operator/times
-    '/       'BinaryExpr$Operator/divide
-    '%       'BinaryExpr$Operator/remainder
-    'xor     'BinaryExpr$Operator/xor
-    '||      'BinaryExpr$Operator/or
-    '&&      'BinaryExpr$Operator/and
-    '|       'BinaryExpr$Operator/binOr
-    '&       'BinaryExpr$Operator/binAnd
+  { '==      'japa.parser.ast.expr.BinaryExpr$Operator/equals
+    '!=      'japa.parser.ast.expr.BinaryExpr$Operator/notEquals
+    '<=      'japa.parser.ast.expr.BinaryExpr$Operator/lessEquals
+    '>=      'japa.parser.ast.expr.BinaryExpr$Operator/greaterEquals
+    '<       'japa.parser.ast.expr.BinaryExpr$Operator/less
+    '>       'japa.parser.ast.expr.BinaryExpr$Operator/greater
+    '<<      'japa.parser.ast.expr.BinaryExpr$Operator/lShift
+    '>>      'japa.parser.ast.expr.BinaryExpr$Operator/rSignedShift
+    '>>>     'japa.parser.ast.expr.BinaryExpr$Operator/rUnsignedShift
+    '+       'japa.parser.ast.expr.BinaryExpr$Operator/plus
+    '-       'japa.parser.ast.expr.BinaryExpr$Operator/minus
+    '*       'japa.parser.ast.expr.BinaryExpr$Operator/times
+    '/       'japa.parser.ast.expr.BinaryExpr$Operator/divide
+    '%       'japa.parser.ast.expr.BinaryExpr$Operator/remainder
+    'xor     'japa.parser.ast.expr.BinaryExpr$Operator/xor
+    '||      'japa.parser.ast.expr.BinaryExpr$Operator/or
+    '&&      'japa.parser.ast.expr.BinaryExpr$Operator/and
+    '|       'japa.parser.ast.expr.BinaryExpr$Operator/binOr
+    '&       'japa.parser.ast.expr.BinaryExpr$Operator/binAnd
    ; assigment
-    '=       'AssignExpr$Operator/assign
-    '+=      'AssignExpr$Operator/plus
-    '-=      'AssignExpr$Operator/minus
-    '*=      'AssignExpr$Operator/star
-    'slash=  'AssignExpr$Operator/slash  ; irritating, reader pissed at '\= (  but not at '\  )
-    '&=      'AssignExpr$Operator/and
-    '|=      'AssignExpr$Operator/or
-    'xor=    'AssignExpr$Operator/xor
-    '%=      'AssignExpr$Operator/rem
-    '<<=     'AssignExpr$Operator/lShift
-    '>>=     'AssignExpr$Operator/rSignedShift
-    '>>>=    'AssignExpr$Operator/rUnsignedShift
+    '=       'japa.parser.ast.expr.AssignExpr$Operator/assign
+    '+=      'japa.parser.ast.expr.AssignExpr$Operator/plus
+    '-=      'japa.parser.ast.expr.AssignExpr$Operator/minus
+    '*=      'japa.parser.ast.expr.AssignExpr$Operator/star
+    'slash=  'japa.parser.ast.expr.AssignExpr$Operator/slash  ; irritating, reader pissed at '\= (  but not at '\  )
+    '&=      'japa.parser.ast.expr.AssignExpr$Operator/and
+    '|=      'japa.parser.ast.expr.AssignExpr$Operator/or
+    'xor=    'japa.parser.ast.expr.AssignExpr$Operator/xor
+    '%=      'japa.parser.ast.expr.AssignExpr$Operator/rem
+    '<<=     'japa.parser.ast.expr.AssignExpr$Operator/lShift
+    '>>=     'japa.parser.ast.expr.AssignExpr$Operator/rSignedShift
+    '>>>=    'japa.parser.ast.expr.AssignExpr$Operator/rUnsignedShift
   })
 
 ; has to be distinct from the above because the names collide
 ; e.g. '- can be a unary negation or a subtraction
 (def japaparser-operator-type-unary
-  { '+            'UnaryExpr$Operator/positive
-    '-            'UnaryExpr$Operator/negative
-    '++           'UnaryExpr$Operator/preIncrement
-    '--           'UnaryExpr$Operator/preDecrement
-    '!            'UnaryExpr$Operator/not
-    'bit-inverse  'UnaryExpr$Operator/inverse          ; reader pissed about '~
-    '+++          'UnaryExpr$Operator/posIncrement     ; order dictates difference in java ... not going to go there
-    '---          'UnaryExpr$Operator/posDecrement
+  { '+            'japa.parser.ast.expr.UnaryExpr$Operator/positive
+    '-            'japa.parser.ast.expr.UnaryExpr$Operator/negative
+    '++           'japa.parser.ast.expr.UnaryExpr$Operator/preIncrement
+    '--           'japa.parser.ast.expr.UnaryExpr$Operator/preDecrement
+    '!            'japa.parser.ast.expr.UnaryExpr$Operator/not
+    'bit-inverse  'japa.parser.ast.expr.UnaryExpr$Operator/inverse          ; reader pissed about '~
+    '+++          'japa.parser.ast.expr.UnaryExpr$Operator/posIncrement     ; order dictates difference in java ... not going to go there
+    '---          'japa.parser.ast.expr.UnaryExpr$Operator/posDecrement
   })
 
 

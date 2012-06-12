@@ -12,7 +12,7 @@
   (let [ param-type             (reference-type (interpret-type param-type))
          param-name             (.toString param-name)
          array-count-or-varargs (first array-count-or-varargs)
-         param-construction     `( ASTHelper/createParameter ~param-type ~param-name )
+         param-construction     `( japa.parser.ASTHelper/createParameter ~param-type ~param-name )
        ]
     (case array-count-or-varargs
       ...  `(doto ~param-construction (.setVarArgs true))

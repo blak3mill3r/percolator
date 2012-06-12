@@ -1,14 +1,14 @@
 (in-ns 'percolator.core)
 (def primitive-type
-  { "boolean"   'ASTHelper/BOOLEAN_TYPE
-    "char"      'ASTHelper/CHAR_TYPE
-    "byte"      'ASTHelper/BYTE_TYPE
-    "short"     'ASTHelper/SHORT_TYPE
-    "int"       'ASTHelper/INT_TYPE
-    "long"      'ASTHelper/LONG_TYPE
-    "float"     'ASTHelper/FLOAT_TYPE
-    "double"    'ASTHelper/DOUBLE_TYPE
-    "void"      'ASTHelper/VOID_TYPE
+  { "boolean"   'japa.parser.ASTHelper/BOOLEAN_TYPE
+    "char"      'japa.parser.ASTHelper/CHAR_TYPE
+    "byte"      'japa.parser.ASTHelper/BYTE_TYPE
+    "short"     'japa.parser.ASTHelper/SHORT_TYPE
+    "int"       'japa.parser.ASTHelper/INT_TYPE
+    "long"      'japa.parser.ASTHelper/LONG_TYPE
+    "float"     'japa.parser.ASTHelper/FLOAT_TYPE
+    "double"    'japa.parser.ASTHelper/DOUBLE_TYPE
+    "void"      'japa.parser.ASTHelper/VOID_TYPE
    })
 
 (defn interpret-type [symbol]
