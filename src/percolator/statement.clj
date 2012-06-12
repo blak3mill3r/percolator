@@ -92,23 +92,23 @@
       (user-statement-interpreters (first form))
       (statement-interpreters      (first form)))))
 
-(defn interpret-statement [form]
-  (let [ expression-interpreter (expression-interpreter-for-form form)
-         statement-interpreter  (statement-interpreter-for-form form)
-         interpreter-arguments  (drop 1 form) ]
-    (if expression-interpreter
-      `(new ExpressionStmt ~( apply expression-interpreter interpreter-arguments ))
-      (if statement-interpreter
-        ( let [ interpreter-result ( apply statement-interpreter interpreter-arguments ) ]
-          ( interpret-statement-again-or-identity interpreter-result ))
-        ( let [ eval-result (eval form) ]
-          (interpret-statement-again-or-identity form))))))
-
 (defn interpret-statement-again-or-identity [form]
   ( if (or (statement-interpreter-for-form form) (expression-interpreter-for-form form))
        (interpret-statement form) ; if it looks like a percolator form, then interpret it
        form                ; otherwise it's the result of some arbitrary clojure code so pass it through untouched
     ))
+
+(defn interpret-statement [form]
+  (let [ expression-interpreter (expression-interpreter-for-form form)
+         statement-interpreter  (statement-interpreter-for-form form)
+         interpreter-arguments  (drop 1 form) ]
+    (if expression-interpreter
+      `(new ExpressionStmt ~( interpret-expression form ))
+      (if statement-interpreter
+        ( let [ interpreter-result ( apply statement-interpreter interpreter-arguments ) ]
+          (interpret-statement-again-or-identity interpreter-result))
+        ( let [ eval-result (eval form) ]
+          (interpret-statement-again-or-identity eval-result))))))
 
 ; TODO try
 ;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {

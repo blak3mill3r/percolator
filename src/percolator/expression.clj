@@ -233,18 +233,17 @@
       (user-expression-interpreters (first form))
       (expression-interpreters (first form)))))
 
+(defn interpret-expression-again-or-identity [form]
+  ( if (or (expression-interpreter-for-form form) (expression-interpreter-for-form form))
+       (interpret-expression form) ; if it looks like a percolator form, then interpret it
+       form                ; otherwise it's the result of some arbitrary clojure code so pass it through untouched
+    ))
 
-; eval-and-interpret is the default
-; the idea behind that is that it leaves open the possibility of clojure runtime code
-; calculating constants that end up as java literals
-; or other fun java-compile-time logic
-; the thing returned by the arbitrary clojure code you stuff in there
-; could be a clojure literal which becomes a java literal expression object expression
-; ... but it could also be any other clojure form that is a valid percolator syntax
-; ... which is badass extensibility
-(defmethod interpret-expression clojure.lang.IPersistentList [form]
-  (let [ expression-interpreter (or (user-expression-interpreters (first form)) (expression-interpreters (first form)) )
+(defmethod interpret-expression clojure.lang.ASeq [form]
+  (let [ expression-interpreter (expression-interpreter-for-form form)
          interpreter-arguments  (drop 1 form) ]
     (if expression-interpreter
-      ( apply expression-interpreter interpreter-arguments )
-      (interpret-expression (eval form)))))
+      ( let [ interpreter-result ( apply expression-interpreter interpreter-arguments) ]
+        (interpret-expression-again-or-identity interpreter-result))
+      ( let [ eval-result (eval form) ]
+        (interpret-expression-again-or-identity eval-result)))))
