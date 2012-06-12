@@ -106,11 +106,6 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
 (load-file "/home/blake/w/percolator/src/percolator/statement.clj")
 (load-file "/home/blake/w/percolator/src/percolator/type.clj")
 
-    ;public CompilationUnit(
-;PackageDeclaration pakage,
-;List<ImportDeclaration> imports,
-;List<TypeDeclaration> types,
-;List<Comment> comments) {
 (defmacro wrap-a-class-kluge [package-decl import-decls class-decl]
   `(new CompilationUnit
     ~(interpret-package-declaration package-decl)

@@ -79,3 +79,52 @@ if it's a list evaluate it recursively?
 seems like it might be possible to use a kind of "reflection" ... loading the
 java classes which are being used in the generated code into the clojure vm
 so it can guess what a symbol represents, making verbosity less necessary
+
+
+
+
+PLAY
+
+turns out  it was war/WEB-INF/web.xml
+that defines RPC services and their paths
+so the RORR could have a route definition thing
+which is macros
+which gen-class up some RemoteService Impls calling your clojure function
+these can be references from web.xml as RPC service implementation classes
+and ALSO in addition to generating those classes
+it generates the client-side interfaces with the proper annotation
+so GWT does its magic
+and there could be a nice clean syntax for making these calls on the client side
+even with RESTful ish behavior
+
+percolator will need annotations first
+and you'll need to understand calling clj from java
+before stuffing clj gen-class'd class name in web.xml
+
+making web.xml:
+(clojure.xml/emit
+{:tag :web-app, :attrs {:xmlns:xsi "http://www.w3.org/2001/XMLSchema-instance", :xsi:schemaLocation "http://java.sun.com/xml/ns/javaee                http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd", :version "2.5", :xmlns "http://java.sun.com/xml/ns/javaee"}, :content [{:tag :servlet, :attrs nil, :content [{:tag :servlet-name, :attrs nil, :content ["greetServlet"]} {:tag :servlet-class, :attrs nil, :content ["com.whatsys.server.GreetingServiceImpl"]}]} {:tag :servlet-mapping, :attrs nil, :content [{:tag :servlet-name, :attrs nil, :content ["greetServlet"]} {:tag :url-pattern, :attrs nil, :content ["/play/greet"]}]} {:tag :servlet, :attrs nil, :content [{:tag :servlet-name, :attrs nil, :content ["testServlet"]} {:tag :servlet-class, :attrs nil, :content ["com.whatsys.server.TestServiceImpl"]}]} {:tag :servlet-mapping, :attrs nil, :content [{:tag :servlet-name, :attrs nil, :content ["testServlet"]} {:tag :url-pattern, :attrs nil, :content ["/play/test"]}]} {:tag :welcome-file-list, :attrs nil, :content [{:tag :welcome-file, :attrs nil, :content ["Play.html"]}]}]}
+  )
+
+
+
+macros for working with gwt Panels like VerticalPanel etc
+( 'doto-panel dialogVPanel
+  :.dialogVPanel             ; symbol starting with . css style name
+  :#foo                      ; symbol starting with # dom id
+  "<b>Sending name etc </b>" ; straight HTML
+  textToServerLabel          ; symbol not beginning with . is a widget to add
+  [ :b "Server Response" ]   ; hiccup
+  serverResponseLabel        ; symbol not beginning with . is a widget to add
+  :align-right               ; symbols are special syntax that map to special things like setHorizontalAlignment VerticalPanel/ALIGN_RIGHT
+)
+
+
+some fancy syntax for handlers
+which should support
+adding an anonymous class handler for a single widget that needs a ClickHandler or something
+
+
+
+maybe gwt Composites similarly
+
