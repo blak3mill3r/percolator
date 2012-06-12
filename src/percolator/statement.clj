@@ -80,18 +80,35 @@
     '(quote class) interpret-statement-decl-class
     })
 
+(def user-statement-interpreters {})
+
+(defn add-statement-interpreters [statement-interpreters]
+  (def user-statement-interpreters
+    (merge user-statement-interpreters statement-interpreters)))
+
+(defn statement-interpreter-for-form [form]
+  (when (seq? form)
+    (or
+      (user-statement-interpreters (first form))
+      (statement-interpreters      (first form)))))
+
 (defn interpret-statement [form]
-  (let [ expression-interpreter (expression-interpreters (first form))
-         statement-interpreter  (statement-interpreters  (first form))
+  (let [ expression-interpreter (expression-interpreter-for-form form)
+         statement-interpreter  (statement-interpreter-for-form form)
          interpreter-arguments  (drop 1 form) ]
     (if expression-interpreter
       `(new ExpressionStmt ~( apply expression-interpreter interpreter-arguments ))
       (if statement-interpreter
-        ( apply statement-interpreter interpreter-arguments )
-        ; no matching expression or statement constructing syntax
-        ; so eval it as a plain old clojure form
-        ; and attempt to interpret the result as a statement form
-        (interpret-statement (eval form))))))
+        ( let [ interpreter-result ( apply statement-interpreter interpreter-arguments ) ]
+          ( interpret-statement-again-or-identity interpreter-result ))
+        ( let [ eval-result (eval form) ]
+          (interpret-statement-again-or-identity form))))))
+
+(defn interpret-statement-again-or-identity [form]
+  ( if (or (statement-interpreter-for-form form) (expression-interpreter-for-form form))
+       (interpret-statement form) ; if it looks like a percolator form, then interpret it
+       form                ; otherwise it's the result of some arbitrary clojure code so pass it through untouched
+    ))
 
 ; TODO try
 ;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {

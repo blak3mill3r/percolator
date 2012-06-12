@@ -221,6 +221,19 @@
     '(quote class-expr ) interpret-expression-class
     })
 
+(def user-expression-interpreters {})
+
+(defn add-expression-interpreters [expression-interpreters]
+  (def user-expression-interpreters
+    (merge user-expression-interpreters expression-interpreters)))
+
+(defn expression-interpreter-for-form [form]
+  (when (seq? form)
+    (or
+      (user-expression-interpreters (first form))
+      (expression-interpreters (first form)))))
+
+
 ; eval-and-interpret is the default
 ; the idea behind that is that it leaves open the possibility of clojure runtime code
 ; calculating constants that end up as java literals
@@ -230,7 +243,7 @@
 ; ... but it could also be any other clojure form that is a valid percolator syntax
 ; ... which is badass extensibility
 (defmethod interpret-expression clojure.lang.IPersistentList [form]
-  (let [ expression-interpreter (expression-interpreters (first form))
+  (let [ expression-interpreter (or (user-expression-interpreters (first form)) (expression-interpreters (first form)) )
          interpreter-arguments  (drop 1 form) ]
     (if expression-interpreter
       ( apply expression-interpreter interpreter-arguments )
