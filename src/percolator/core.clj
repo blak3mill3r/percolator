@@ -105,6 +105,7 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
 (load-file "/home/blake/w/percolator/src/percolator/japaparser.clj")
 (load-file "/home/blake/w/percolator/src/percolator/statement.clj")
 (load-file "/home/blake/w/percolator/src/percolator/type.clj")
+(load-file "/home/blake/w/percolator/src/percolator/extension.clj")
 
 (defmacro wrap-a-class-kluge [package-decl import-decls class-decl]
   `(new CompilationUnit
