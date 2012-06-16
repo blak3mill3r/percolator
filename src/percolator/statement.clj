@@ -65,6 +65,8 @@
 (defn interpret-statement-decl-class [& forms]
   `(new TypeDeclarationStmt ~( apply interpret-body-decl-class forms )))
 
+(defn interpret-statement-block [& s] (interpret-block s))
+
 (def statement-interpreters
   { '(quote return)   interpret-statement-return
     '(quote break)    interpret-statement-break
@@ -77,7 +79,9 @@
     '(quote while)    interpret-statement-while
     '(quote do-while) interpret-statement-do-while
     ; class type declaration statement
-    '(quote class) interpret-statement-decl-class
+    '(quote class)    interpret-statement-decl-class
+    ; just a code block ... (aka anonymous scope)
+    '(quote block)    interpret-statement-block
     })
 
 (def user-statement-interpreters {})
