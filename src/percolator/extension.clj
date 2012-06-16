@@ -1,6 +1,10 @@
 (in-ns 'percolator.core)
 
-;trickery (dirty hack) to allow more comfortable interpreter definition syntax
+;trickery (dirty hack?) to allow more comfortable interpreter definition syntax
+;for extensions to percolator
+;meaning, not having to type ~' before each unqualified symbol
+;I don't know if there's a more sensible way to do this
+;but this does work and the dirtiness is at least contained :)
 
 (defn turn-unqualified-symbols-back-into-unqualified-symbols [form ns-name]
   (let [ qualifier-stripper
@@ -28,9 +32,14 @@
       form))) ; was not a sequence
 
 
-; the definition of the fn macro
-; is something like what I want 
-; at least in terms of args accepted
+; this is similar to the clojure.core/fn macro
+; except that unqualified symbols in backquote forms are treated differently
+; as they represent splicing of percolator forms
+; the difference between this and fn is that the unqualified symbols in
+; backquote forms need to STAY unqualified, they are
+; NOT resolved in the current namespace as they would be with fn
+; because they will later be interpreted by percolator which treats
+; unqualified symbols specially in order to keep the percolator syntax clean
 (defmacro interpreter
   "params => positional-params* , or positional-params* & next-param
   positional-param => binding-form
@@ -44,15 +53,14 @@
           sigs (if name (next sigs) sigs)
           newsigs (map #(turn-unqualified-symbols-back-into-unqualified-symbols %1 *ns*) sigs)
           ]
-      (do
-        (doall (map println [ name sigs newsigs ]))
-        (with-meta
-        (if name
-          (list* 'fn* name newsigs)
-          (cons 'fn* newsigs))
-        (meta &form)) )))
+      (with-meta
+      (if name
+        (list* 'fn* name newsigs)
+        (cons 'fn* newsigs))
+      (meta &form)) ))
 
-
+; this is to interpreter what defn is to fn
+; it's duplicating most of defn
 (def 
 
  ^{:macro true
