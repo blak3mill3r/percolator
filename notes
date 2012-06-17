@@ -128,3 +128,20 @@ adding an anonymous class handler for a single widget that needs a ClickHandler 
 
 maybe gwt Composites similarly
 
+
+
+
+
+What would be super cool
+is if 'implements' could be inferred
+from method sigs and call sites
+
+as in, somewhere there's a
+aWidg.addClickHandler(x)
+
+and x is a variable, trace it's type...
+add an "implements ClickHandler" to the type if it fits the interface
+
+what would that entail to do this generically for java?
+percolator must be able to determine the class of x
+what if x is part of a hierarchy?
