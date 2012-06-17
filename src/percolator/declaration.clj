@@ -45,12 +45,28 @@
         ~(interpret-type java-type)
         [ ~@(map #(apply interpret-declarator %1) declarators) ] )) 
 
+(def user-body-decl-interpreters {})
+
+(defn body-decl-interpreter-for-form [form]
+  (when (seq? form)
+    (or
+      (user-body-decl-interpreters (first form))
+      (body-decl-interpreters      (first form)))))
+
+(defn interpret-body-decl-again-or-identity [form]
+  ( if (or (body-decl-interpreter-for-form form) (expression-interpreter-for-form form))
+       (interpret-body-decl form) ; if it looks like a percolator form, then interpret it
+       form                ; otherwise it's the result of some arbitrary clojure code so pass it through untouched
+    ))
+
 (defn interpret-body-decl [form]
-  (let [ interpreter (body-decl-interpreters (first form))
-         arguments   (drop 1 form) ]
+  (let [ interpreter  (body-decl-interpreter-for-form form)
+         interpreter-arguments  (drop 1 form) ]
     (if interpreter
-      (apply interpreter arguments)
-      (interpret-body-decl (eval form)))))
+      ( let [ interpreter-result ( apply interpreter interpreter-arguments ) ]
+        (interpret-body-decl-again-or-identity interpreter-result))
+      ( let [ eval-result (eval form) ]
+        (interpret-body-decl-again-or-identity eval-result)))))
 
 (defn is-class-modifier-option [body-decl]
   ( #{ '(quote implements) '(quote extends) } (first body-decl)))
@@ -98,6 +114,11 @@
     '(quote class)  interpret-body-decl-class
     '(quote ctor)   interpret-body-decl-ctor
     })
+
+(defn add-body-decl-interpreters [body-decl-interpreters]
+  (def user-body-decl-interpreters
+    (merge user-body-decl-interpreters body-decl-interpreters)))
+
 
 ; keep in mind that all body declarations share 2 things in common
 ; they can have javadocs and they can have annotations
