@@ -54,7 +54,7 @@
       (body-decl-interpreters      (first form)))))
 
 (defn interpret-body-decl-again-or-identity [form]
-  ( if (or (body-decl-interpreter-for-form form) (expression-interpreter-for-form form))
+  ( if (or (body-decl-interpreter-for-form form))
        (interpret-body-decl form) ; if it looks like a percolator form, then interpret it
        form                ; otherwise it's the result of some arbitrary clojure code so pass it through untouched
     ))
