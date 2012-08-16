@@ -4,8 +4,9 @@
 This works, but is still quite experimental. It may change radically. Comments are welcome.
 
 ## Q & A
-Q: WTF?
-A: Extensible Java metaprogramming
+**Q:** WTF?
+
+**A:** Extensible Java metaprogramming
 
 This is a tool for writing arbitrarily complex compile-time logic for your Java projects. It is meant to become part of your Java build process, between you and the compiler.
 
@@ -81,13 +82,15 @@ FIXME fill this in
 
 ## Usage
 
-WYSIWYG. I've been experimenting with it in vim. It uses leiningen. You might
-be able to toy with it the way I have been:
+WYSIWYG. I've been experimenting with it in vim. It uses leiningen. You might be able to toy with it the way I have been:
+```bash
 $ cd percolator/play
 $ lein vimclojure
 $ vim src/com/whatsys/test.clj
+```
 and then <Leader>eb a visual block
-Hopefully you get compilable java source code in a vim buffer.
+
+If you are very fortunate, you might get compilable java source code in a vim buffer.
 
 If you try this out, I'd love to hear what you think.
 
