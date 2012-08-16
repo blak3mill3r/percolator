@@ -35,8 +35,7 @@ good deal of the Java spec ... you can:
 * **slag** together compilation units, attaching classes to them, and slagging them together into packages, importing things... I don't know if there's a proper verb for this, it's usually done by a programmer
 * **metaprogram** unashamedly and without hesitation
 
-The reason it's so simple and small is that it's just a wrapper around Google's thoroughly spiffy library, javaparser, and a bit of tasty Clojure sugar.
-http://code.google.com/p/javaparser/
+The reason it's so simple and small is that it's just a wrapper around Google's thoroughly spiffy library, [javaparser](http://code.google.com/p/javaparser/), and a tiny helpful smattering of Clojure.
 
 ## A taste
 This:
@@ -76,21 +75,28 @@ by extending percolator like:
 It works. There's an example at ./play which compiles with the GWT compiler.
 
 ## Notably missing
+
 You cannot yet:
+
 * define a class with generics
-FIXME fill this in
+* I think I forgot 'float' primitives ... 'double' is there
+* probably a lot more...
+* FIXME fill this in
 
 ## Usage
 
-WYSIWYG. I've been experimenting with it in vim. It uses leiningen. You might be able to toy with it the way I have been:
+WYSIWYG. I've been experimenting with it in vim. It uses leiningen, and I use vimclojure. You might be able to toy with it the way I have been:
 ```bash
 $ cd percolator/play
 $ lein vimclojure
 $ vim src/com/whatsys/test.clj
 ```
-and then <Leader>eb a visual block
+and then eval percolator stuff in vim... if you are very fortunate, you might get compilable java source code in a vim buffer. Paste it into Play.java and try something along the lines of
+```bash
+$ ant devmode
+```
 
-If you are very fortunate, you might get compilable java source code in a vim buffer.
+...to start your GWT devmode server
 
 If you try this out, I'd love to hear what you think.
 
