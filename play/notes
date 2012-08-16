@@ -1,0 +1,96 @@
+
+okay so it works like
+(disable 'foo)
+where disable is a user defined function returning a percolator expression form
+irritatingly I have to quote 'foo
+as this is a function not a macro
+if it were a macro, then eval on it expands the macro but what's left would need to be eval'd again
+what's needed to solve this?
+how about a way to extend percolator with more 'something forms
+you pass a raw symbol like something and a function into a percolator public api
+when it sees that special 'something
+it calls your function treating it like any other interpreter
+would this work?
+
+NO because interpreters dont call interpreters (yet)
+if I write 'disable
+  (defn interpret-gwt-statement-disable [symbol]
+    ( '. ~'symbol setEnabled false ))
+that doesn't work
+because interpreters need to return "finished" clojure forms that run and produce ASTs
+
+could I change that?
+could interpreters be recursive?
+they already are!~!!!????
+(interpret-expression (eval something-i-didnt-recognize ))
+that's badass
+
+they are not!
+
+what is happening?
+
+('disable foo)
+
+interpret-statement gets called on that
+it matches an interpreter
+so it applies the arg 'foo and that's it .. that's the result which is stuffed
+into the clojure code forms
+
+that's wrong
+it needs to have interpret-statement called on it again
+
+
+
+Okay to make the lib more flexible and extensible
+what is needed now is
+to abstract away the similarities between the different percolator "scopes"
+so instead of
+(add-statement-interpreters {}) etc
+(add-interpreters-to-scope :statement {})
+
+(interpret-statement form)
+(interpret-in-scope :statement form)
+
+and scopes should be a hierarchy (they should be able to inherit other scopes)
+ideally they should be able to inherit other scopes and WRAP the result that comes from the inherited scope's interpreter
+use case example is statement inheriting expression
+and wrapping the resulting expression object in an ExpressionStmt object
+there could be more good uses for that I think
+
+add-interpreters-to-scope
+also defines a scope if it doesn't exist already
+so it needs to accept some argument
+that could define inheritance relationships
+
+first getting the data structure right (should be easy)
+then the trickier part is implementing interpret-*
+(interpret-percolator-form-in-scope :statement form)
+
+
+what is the current state of that code? the stuff that needs refactoring into a generic interpret-in-scope ish arrangement
+interpret-expression is a multimethod matching the java primitive types String Long Boolean Double Character
+and a list
+
+and a special meaning for symbol <-- this should be easy to define per-scope
+it should also be possible to override behavior for String Long Boolean per-scope
+
+so ... what is general and can be abstracted away?
+the recursive ( interpret(eval form) ) stuff is good
+in some way supporting "inheriting" some interpreters from another scope
+and "wrapping" those inherited interpreters with something else
+like the way statement scope inherits expression scope but wraps it's result in ('new ExpressionStmt ~e)
+
+what should the data structures look like for percolator scopes?
+a scope is
+a map of "first form"s to functions, functions which take percolator forms and return clojure forms which probably construct japaparser objects
+"inheriting" a single key from another scope without wrapping is just copying the function into this scope's map
+inheriting and wrapping, user supplies a function which takes the result of the inherited interpreter, and the form, and returns a clojure form for execution
+
+so given that fairly simple concept of inheriting/wrapping
+
+what's the rest of it entail?
+
+not much
+interpret recursively in same scope ... easy enough
+
+ant build and ant devmode working
