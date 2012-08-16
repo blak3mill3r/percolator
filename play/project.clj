@@ -6,5 +6,6 @@
                  [org.clojure/clojure-contrib "1.2.0"]
                  [percolator/core "1.0.0"]
                  ]
-  ;:dev-dependencies [[vimclojure/server ""]]
+  :dev-dependencies [[org.clojars.ibdknox/lein-nailgun "1.1.1"]
+                     [vimclojure/server "2.3.5"]]
             )
