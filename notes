@@ -1,51 +1,3 @@
-fixing namespace issue
-
-only need 1 namespace for this
-use load and in-ns
-and declare
-
-for expression:
-(expression-interpreters interpret-declarator eval-and-interpret interpret-expression-binary-operation split-arguments-and-body-decls interpret-expression-this interpret-expression-variable-declaration interpret-expression-new interpret-expression-super japaparser-operator-type-unary interpret-expression-ambiguous-binary-or-unary-operation interpret-expression-assignment-operation japaparser-operator-constant interpret-expression interpret-expression-unary-operation interpret-expression-method-call)
-
-macro goodness
-make it easy to express java syntax
-interpolating clojure variables as constants in java source and such
-
-(def-compilation-unit "foo.bar.baz.SomeClass")
-maybe ... but leave packages and compilation units and classes for last
-
-what about simple shit like defining a function or even just an expression?
-
-probably start with just expression level
-
-function foo(int x, int y = 2) {
-  return x + y;
-}
-
-(def-java-function
-  'foo'
-  [('int x) ('int y 2)]
-  (return (+ x y)))
-
-
-expressions would need to support
-arithmatic
-function calls (instance and static)
-precedence (preferably with minimal parenthesis in the generated code but not essential)
-the new operator
-
-
-so ... how do I want to express the expression
-System.out.println("HELLO THERE");
-
-it has a string literal which I want to represent as a clojure string literal
-method calls, expressed like clojure method calls
-by convention assume that symbols starting with capital letter represent java type literals
-and otherwise represent java name expressions
-
-like clojure calls or like the clojure-java-interop dot style?
-
-
 there's a difference between field-access and method-call which the programmer must express
 that expression is a NameExpr("System"), a FieldAccessExpr("out"), and a MethodCallExpr("println")
 
@@ -90,7 +42,7 @@ that defines RPC services and their paths
 so the RORR could have a route definition thing
 which is macros
 which gen-class up some RemoteService Impls calling your clojure function
-these can be references from web.xml as RPC service implementation classes
+these can be referenced from web.xml as RPC service implementation classes
 and ALSO in addition to generating those classes
 it generates the client-side interfaces with the proper annotation
 so GWT does its magic
