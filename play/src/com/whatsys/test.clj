@@ -1,13 +1,13 @@
 (ns com.whatsys.test
   ( :use     [percolator.core]))
 
-(definterpreter interpret-async-rpc [service parameter-list success failure]
+(definterpreter async-rpc [service parameter-list success failure]
   `( '. greetingService greetServer textToServer
      ('new AsyncCallback<String> 
        ( 'method #{:public} void onSuccess ~parameter-list ~@success)
        ( 'method #{:public} void onFailure [(Throwable e)] ~@failure))))
 
-(definterpreter interpret-statement-on-click [identifier-symbol & statements]
+(definterpreter on-click [identifier-symbol & statements]
   `( '. ~identifier-symbol addClickHandler 
      ('new ClickHandler
        ( 'method #{:public} void onClick [ (ClickEvent e) ] ~@statements ))))
@@ -32,17 +32,17 @@
     '(quote style)      (interpreter [o s] `( '. ~o addStyleName    ~s    ))
     '(quote unstyle)    (interpreter [o s] `( '. ~o removeStyleName ~s    ))
     '(quote html=)      (interpreter [o s] `( '. ~o setHTML         ~s    ))
-    '(quote on-click)   interpret-statement-on-click
-    '(quote async)      interpret-async-rpc
+    '(quote on-click)   on-click
+    '(quote async)      async-rpc
     '(quote button)     (interpreter [n] `( 'local #{:final} Button    (~n ('new Button      )) ))
     '(quote dialog-box) (interpreter [n] `( 'local #{:final} DialogBox (~n ('new DialogBox   )) ))
     })
 
-(definterpreter interpret-expression-gwt-new [class-name]
+(definterpreter gwt-new [class-name]
   `( '. GWT create ( 'class-expr ~class-name ) ))
 
 (add-expression-interpreters
-  { '(quote gwt-new) interpret-expression-gwt-new })
+  { '(quote gwt-new) gwt-new })
 
 
 ; that was for gwt
@@ -50,7 +50,7 @@
 ; which are kinda like inlined methods
 ; they're expanded at compile time
 
-(definterpreter interpret-show-dialog [s]
+(definterpreter show-dialog [s]
   `( 'block
      ( 'html= serverResponseLabel ~s )
      ( 'center dialogBox )
@@ -58,7 +58,7 @@
      ))
 
 (add-statement-interpreters
-  { '(quote show-dialog) interpret-show-dialog
+  { '(quote show-dialog) show-dialog
    })
 
 (wrap-a-class-kluge
