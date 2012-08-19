@@ -60,3 +60,27 @@ DONE fixed
 
 now to refactor expression.clj
 
+
+
+done, and done with body-decl
+
+good stuff
+
+
+now for statement
+which needs inheritance from expression
+
+so current scopes definition needs to be changed
+
+instead of
+
+{:expression {'this this-expr}
+ :statement {}
+}
+
+
+{:expression { :interpreters {'this this-expr} }
+ :statement { :interpreters { 'break break-stmt }
+              :inherits { :expression expr-to-stmt } }
+}
+
