@@ -56,3 +56,7 @@ has to look through that
 instead it should look at the form and see if it's first is a list beginning with the literal symbol quote
 and iff so, do the map lookup
 FIX THAT
+DONE fixed
+
+now to refactor expression.clj
+

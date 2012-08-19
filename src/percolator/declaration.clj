@@ -2,7 +2,13 @@
 (declare body-decl-interpreters)
 
 (defn interpret-package-declaration [form]
-  `(new PackageDeclaration ~(interpret-expression form)))
+(do
+ (println form) 
+  `(new PackageDeclaration ~(interpret-expression form)) ))
+
+;(interpret-expression 'com.whatsys.client)
+; should be
+;(new japa.parser.ast.expr.NameExpr "com.whatsys.client")
 
 (defn interpret-import-decl [form]
   `(new ImportDeclaration

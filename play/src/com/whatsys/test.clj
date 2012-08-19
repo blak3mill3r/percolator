@@ -41,9 +41,9 @@
 (definterpreter gwt-new [class-name]
   `( '. GWT create ( 'class-expr ~class-name ) ))
 
-(add-expression-interpreters
-  { '(quote gwt-new) gwt-new })
-
+;indeed this is fucking something up
+(add-interpreters-to-scope :expression
+  { 'gwt-new gwt-new })
 
 ; that was for gwt
 ; for an app, could extend further with shorthands

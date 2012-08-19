@@ -1,5 +1,10 @@
 (in-ns 'percolator.core)
 
+(reset-scope :expression)
+
+(defn interpret-expression [form] (interpret-in-scope :expression form))
+
+
 ; symbol aliases
 ; which resolves to an Operator constant from japaparser
 (def japaparser-operator-constant
@@ -50,22 +55,9 @@
     '---          'japa.parser.ast.expr.UnaryExpr$Operator/posDecrement
   })
 
-
-; TODO smarter type inference
-; and override syntax
-(defmulti interpret-expression class)
-
-; clojure literals to java literals
-(defmethod interpret-expression java.lang.String    [string] `(new StringLiteralExpr  ~string))
-(defmethod interpret-expression java.lang.Long      [long]   `(new LongLiteralExpr    ~(.toString long)))
-(defmethod interpret-expression java.lang.Boolean   [bool]   `(new BooleanLiteralExpr ~bool))
-(defmethod interpret-expression java.lang.Character [char]   `(new CharLiteralExpr    ~(.toString char)))
-(defmethod interpret-expression java.lang.Double    [double] `(new DoubleLiteralExpr  ~(.toString double)))
-(defmethod interpret-expression nil                 [& a]    `(new NullLiteralExpr ))
-
 ; clojure symbols as a shorthand for NameExpr and FieldAccessExpr-of-NameExpr
 ; i.e. System or System/out
-(defmethod interpret-expression clojure.lang.Symbol [symbol]
+(defn interpret-expression-symbol [symbol]
   (if (re-find #"^\w*\/\w*$" (.toString symbol))
     (let [ name-and-field (string/split #"/" (.toString symbol)) ]
       `(new FieldAccessExpr (new NameExpr ~(first name-and-field)) ~(last name-and-field))
@@ -96,8 +88,6 @@
           )
         (.setAnonymousClassBody ~( when body-decls `[ ~@( map interpret-body-decl body-decls ) ] ))
       )))
-
-(defn interpret-expression-this [] `(new ThisExpr))
 
 (defn interpret-expression-super [& target-class]
   (if (first target-class)
@@ -157,15 +147,68 @@
         ~(interpret-type java-type)
         [ ~@(map #(apply interpret-declarator %1) declarators) ] ))
 
-(defn eval-and-interpret [list] (interpret-expression (eval list)))
-
-(comment for debugging
-(defn eval-and-interpret [list]
-  (interpret-expression "DIDNT MATCH SYNTAX"))
-  )
-
 (defn interpret-expression-class [java-type]
   `(new ClassExpr ~(interpret-type java-type)))
+
+(add-interpreters-to-scope
+  :expression
+  { 'new                interpret-expression-new
+    'this               (fn [] `(new ThisExpr))
+    'super              interpret-expression-super
+    '.                  interpret-expression-method-call
+    'local              interpret-expression-variable-declaration
+    'class-expr         interpret-expression-class
+    java.lang.String    (fn [string] `(new StringLiteralExpr  ~string)              )
+    java.lang.Long      (fn [long]   `(new LongLiteralExpr    ~(.toString long)    ))
+    java.lang.Boolean   (fn [bool]   `(new BooleanLiteralExpr ~bool                ))
+    java.lang.Character (fn [char]   `(new CharLiteralExpr    ~(.toString char)    ))
+    java.lang.Double    (fn [double] `(new DoubleLiteralExpr  ~(.toString double)  ))   ; to add floats as well will require some extra percolator syntax hint, ditto int types smaller than long
+    clojure.lang.Symbol interpret-expression-symbol
+    '++                 ( interpret-expression-unary-operation '++          )
+    '--                 ( interpret-expression-unary-operation '--          )
+    '!                  ( interpret-expression-unary-operation '!           )
+    'bit-inverse        ( interpret-expression-unary-operation 'bit-inverse )
+    '+++                ( interpret-expression-unary-operation '+++         )
+    '---                ( interpret-expression-unary-operation '---         )
+    '+                  ( interpret-expression-ambiguous-binary-or-unary-operation '+)
+    '-                  ( interpret-expression-ambiguous-binary-or-unary-operation '-)
+    '==                 ( interpret-expression-binary-operation '==  ) 
+    '!=                 ( interpret-expression-binary-operation '!=  )
+    '<=                 ( interpret-expression-binary-operation '<=  )
+    '>=                 ( interpret-expression-binary-operation '>=  )
+    '<                  ( interpret-expression-binary-operation '<   )
+    '>                  ( interpret-expression-binary-operation '>   )
+    '<<                 ( interpret-expression-binary-operation '<<  )
+    '>>                 ( interpret-expression-binary-operation '>>  )
+    '>>>                ( interpret-expression-binary-operation '>>> )
+    '*                  ( interpret-expression-binary-operation '*  )
+    '/                  ( interpret-expression-binary-operation '/  )
+    '%                  ( interpret-expression-binary-operation '%  )
+    'xor                ( interpret-expression-binary-operation 'xor)
+    '||                 ( interpret-expression-binary-operation '|| )
+    '&&                 ( interpret-expression-binary-operation '&& )
+    '|                  ( interpret-expression-binary-operation '|  )
+    '&                  ( interpret-expression-binary-operation '&  )
+    '=                  ( interpret-expression-assignment-operation '=       )
+    '+=                 ( interpret-expression-assignment-operation '+=      )
+    '-=                 ( interpret-expression-assignment-operation '-=      )
+    '*=                 ( interpret-expression-assignment-operation '*=      )
+    'slash=             ( interpret-expression-assignment-operation 'slash=  )
+    '&=                 ( interpret-expression-assignment-operation '&=      )
+    '|=                 ( interpret-expression-assignment-operation '|=      )
+    'xor=               ( interpret-expression-assignment-operation 'xor=    )
+    '%=                 ( interpret-expression-assignment-operation '%=      )
+    '<<=                ( interpret-expression-assignment-operation '<<=     )
+    '>>=                ( interpret-expression-assignment-operation '>>=     )
+    '>>>=               ( interpret-expression-assignment-operation '>>>=    )
+   })
+
+;(defn eval-and-interpret [list] (interpret-expression (eval list)))
+;
+;(comment for debugging
+;(defn eval-and-interpret [list]
+;  (interpret-expression "DIDNT MATCH SYNTAX"))
+;  )
 
 ; this is kinda the central point of definition of the syntax of this library
 ; it associates first-elements of clojure forms
@@ -220,30 +263,3 @@
     ; class expression, i.e. Something.class
     '(quote class-expr ) interpret-expression-class
     })
-
-(def user-expression-interpreters {})
-
-(defn add-expression-interpreters [expression-interpreters]
-  (def user-expression-interpreters
-    (merge user-expression-interpreters expression-interpreters)))
-
-(defn expression-interpreter-for-form [form]
-  (when (seq? form)
-    (or
-      (user-expression-interpreters (first form))
-      (expression-interpreters (first form)))))
-
-(defn interpret-expression-again-or-identity [form]
-  ( if (or (expression-interpreter-for-form form) (expression-interpreter-for-form form))
-       (interpret-expression form) ; if it looks like a percolator form, then interpret it
-       form                ; otherwise it's the result of some arbitrary clojure code so pass it through untouched
-    ))
-
-(defmethod interpret-expression clojure.lang.ASeq [form]
-  (let [ expression-interpreter (expression-interpreter-for-form form)
-         interpreter-arguments  (drop 1 form) ]
-    (if expression-interpreter
-      ( let [ interpreter-result ( apply expression-interpreter interpreter-arguments) ]
-        (interpret-expression-again-or-identity interpreter-result))
-      ( let [ eval-result (eval form) ]
-        (interpret-expression-again-or-identity eval-result)))))
