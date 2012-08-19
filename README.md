@@ -73,7 +73,8 @@ by extending percolator like:
 ```
 
 ## Status
-It works. There's an example at ./play which compiles with the GWT compiler.
+
+It works. There's an example at [./play/src/com/whatsys/test.clj](https://github.com/blak3mill3r/percolator/blob/master/play/src/com/whatsys/test.clj) which compiles with the GWT compiler.
 
 ## Notably missing
 
