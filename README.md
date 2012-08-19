@@ -64,11 +64,12 @@ by extending percolator like:
     ( 'new ClickHandler
       ( 'method #{:public} void onClick [ (ClickEvent e) ] ~@statements ))))
 
-(add-statement-interpreters
-  { '(quote on-click) (interpret-statement-on-click)
-    '(quote hide)     (interpreter [o] `( '. ~o hide ))
-    '(quote enable)   (interpreter [o] `( '. ~o setEnabled true ))
-    '(quote focus)    (interpreter [o] `( '. ~o setFocus true )) })
+(add-interpreters-to-scope :statement
+  { 'on-click   on-click
+    'hide       (interpreter [o]   `( '. ~o hide                  ))
+    'enable     (interpreter [o]   `( '. ~o setEnabled true       ))
+    'focus      (interpreter [o]   `( '. ~o setFocus true         ))
+    })
 ```
 
 ## Status
@@ -79,7 +80,7 @@ It works. There's an example at ./play which compiles with the GWT compiler.
 You cannot yet:
 
 * define a class with generics
-* I think I forgot 'float' primitives ... 'double' is there
+* You cannot express Java 'float' literals or literals of int types smaller than long
 * probably a lot more...
 * FIXME fill this in
 
