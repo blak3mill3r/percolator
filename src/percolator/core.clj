@@ -4,7 +4,7 @@ primitive-type interpret-type reference-type
 first-form-that-looks-like interpret-modifiers modifiers-keywords partition-by-starts-with
 interpret-statement-do-while interpret-block interpret-statement-throw interpret-statement-for interpret-statement-foreach interpret-statement interpret-switch-entry-statement interpret-statement-if interpret-statement-while interpret-statement-switch interpret-statement-break interpret-statement-return statement-interpreters interpret-statement-continue
 is-class-modifier-option interpret-class-modifier-option interpret-body-decl-ctor body-decl-interpreters interpret-body-decl-method interpret-body-decl-class interpret-body-decl interpret-body-decl-field interpret-parameter snip-class-modifier-options-from-body-decls interpret-class-modifier-options
-vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
+vomit-class-decl return-false add-two-to-s wrap-a-class-kluge definterpreter interpreter)
 
 (ns percolator.core
   (:require [clojure.contrib.string :as string])
@@ -99,13 +99,13 @@ vomit-class-decl return-false add-two-to-s wrap-a-class-kluge)
 
   )
 
+(load-file "/home/blake/w/percolator/src/percolator/extension.clj") ; rename extension, it is fundamental and will be used in percolator core
 (load-file "/home/blake/w/percolator/src/percolator/util.clj")
 (load-file "/home/blake/w/percolator/src/percolator/declaration.clj")
 (load-file "/home/blake/w/percolator/src/percolator/expression.clj")
 (load-file "/home/blake/w/percolator/src/percolator/japaparser.clj")
 (load-file "/home/blake/w/percolator/src/percolator/statement.clj")
 (load-file "/home/blake/w/percolator/src/percolator/type.clj")
-(load-file "/home/blake/w/percolator/src/percolator/extension.clj")
 
 (defmacro wrap-a-class-kluge [package-decl import-decls class-decl]
   `(new CompilationUnit
