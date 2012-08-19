@@ -37,3 +37,22 @@ THAT IS GOOD
 maybe instead of interpret-in-scope being the multimethod
 interpreter-for-scope-and-form could be
 that sounds better
+
+YAY it works
+no multimethod at all, just doing it manually
+in interpreter-for-scope-and-form
+
+
+this is pretty good
+now you have scope :expression working
+
+
+One thing I should fix
+
+the keys '(quote break)
+that's dumb
+because every single form which is seq?
+has to look through that
+instead it should look at the form and see if it's first is a list beginning with the literal symbol quote
+and iff so, do the map lookup
+FIX THAT
