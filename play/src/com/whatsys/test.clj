@@ -62,8 +62,8 @@
    })
 
 (wrap-a-class-kluge
-  com.whatsys.test.client
-  [ com.whatsys.test.shared.FieldVerifier
+  com.whatsys.client
+  [ com.whatsys.shared.FieldVerifier
     com.google.gwt.core.client.EntryPoint
     com.google.gwt.core.client.GWT
     com.google.gwt.event.dom.client.ClickEvent
@@ -82,7 +82,7 @@
 
   (class-decl
 
-  #{:public} Test
+  #{:public} Play
 
     ( 'implements EntryPoint )
 
@@ -115,13 +115,11 @@
       ;  ('focus)
       ;  ('select-all))
 
-      ( 'local #{:final} DialogBox (dialogBox ('new DialogBox)) )
       ( 'dialog-box dialogBox )
 
       ( '. dialogBox setText "RPC" )
       ( '. dialogBox setAnimationEnabled true )
 
-      ( 'local #{:final} Button ( closeButton ('new Button "Close"))  )
       ( 'button closeButton )
 
       ( '. ( '. closeButton getElement ) setId "closeButton" )
