@@ -97,13 +97,13 @@
       (statement-interpreters      (first form)))))
 
 (defn interpret-statement-again-or-identity [form]
-  ( if (or (statement-interpreter-for-form form) (expression-interpreter-for-form form))
+  ( if (or (statement-interpreter-for-form form) (interpreter-for-scope-and-form :expression form))
        (interpret-statement form) ; if it looks like a percolator form, then interpret it
        form                ; otherwise it's the result of some arbitrary clojure code so pass it through untouched
     ))
 
 (defn interpret-statement [form]
-  (let [ expression-interpreter (expression-interpreter-for-form form)
+  (let [ expression-interpreter (interpreter-for-scope-and-form :expression form)
          statement-interpreter  (statement-interpreter-for-form form)
          interpreter-arguments  (drop 1 form) ]
     (if expression-interpreter

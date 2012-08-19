@@ -2,9 +2,7 @@
 (declare body-decl-interpreters)
 
 (defn interpret-package-declaration [form]
-(do
- (println form) 
-  `(new PackageDeclaration ~(interpret-expression form)) ))
+  `(new PackageDeclaration ~(interpret-expression form)) )
 
 ;(interpret-expression 'com.whatsys.client)
 ; should be
