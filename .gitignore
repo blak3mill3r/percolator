@@ -6,3 +6,6 @@
 /.lein-failures
 /checkouts
 /.lein-deps-sum
+play/gwt-unitCache/*
+*.class
+play/war/WEB-INF/classes/
