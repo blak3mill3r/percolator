@@ -1,5 +1,8 @@
 (in-ns 'percolator.core)
-(declare interpret-statement)
+
+(reset-scope :statement)
+
+(defn interpret-statement [form] (interpret-in-scope :statement form))
 
 (defn interpret-block [stmt-list]
   `(new BlockStmt [ ~@(map interpret-statement stmt-list) ] ))
@@ -67,52 +70,27 @@
 
 (defn interpret-statement-block [& s] (interpret-block s))
 
-(def statement-interpreters
-  { '(quote return)   interpret-statement-return
-    '(quote break)    interpret-statement-break
-    '(quote continue) interpret-statement-continue
-    '(quote throw)    interpret-statement-throw
-    '(quote switch)   interpret-statement-switch
-    '(quote for)      interpret-statement-for
-    '(quote foreach)  interpret-statement-foreach
-    '(quote if)       interpret-statement-if
-    '(quote while)    interpret-statement-while
-    '(quote do-while) interpret-statement-do-while
+
+(add-interpreters-to-scope
+  :statement
+  { 'return   interpret-statement-return
+    'break    interpret-statement-break
+    'continue interpret-statement-continue
+    'throw    interpret-statement-throw
+    'switch   interpret-statement-switch
+    'for      interpret-statement-for
+    'foreach  interpret-statement-foreach
+    'if       interpret-statement-if
+    'while    interpret-statement-while
+    'do-while interpret-statement-do-while
     ; class type declaration statement
-    '(quote class)    interpret-statement-decl-class
+    'class    interpret-statement-decl-class
     ; just a code block ... (aka anonymous scope)
-    '(quote block)    interpret-statement-block
-    })
+    'block    interpret-statement-block
+   })
 
-(def user-statement-interpreters {})
-
-(defn add-statement-interpreters [statement-interpreters]
-  (def user-statement-interpreters
-    (merge user-statement-interpreters statement-interpreters)))
-
-(defn statement-interpreter-for-form [form]
-  (when (seq? form)
-    (or
-      (user-statement-interpreters (first form))
-      (statement-interpreters      (first form)))))
-
-(defn interpret-statement-again-or-identity [form]
-  ( if (or (statement-interpreter-for-form form) (interpreter-for-scope-and-form :expression form))
-       (interpret-statement form) ; if it looks like a percolator form, then interpret it
-       form                ; otherwise it's the result of some arbitrary clojure code so pass it through untouched
-    ))
-
-(defn interpret-statement [form]
-  (let [ expression-interpreter (interpreter-for-scope-and-form :expression form)
-         statement-interpreter  (statement-interpreter-for-form form)
-         interpreter-arguments  (drop 1 form) ]
-    (if expression-interpreter
-      `(new ExpressionStmt ~( interpret-expression form ))
-      (if statement-interpreter
-        ( let [ interpreter-result ( apply statement-interpreter interpreter-arguments ) ]
-          (interpret-statement-again-or-identity interpreter-result))
-        ( let [ eval-result (eval form) ]
-          (interpret-statement-again-or-identity eval-result))))))
-
-; TODO try
-;public TryStmt(BlockStmt tryBlock, List<CatchClause> catchs, BlockStmt finallyBlock) {
+; statement inherits expression
+; because any valid expression can become a statement
+; by wrapping it in `(new ExpressionStmt ~expr)
+; this is cool...
+(inherit-scope :statement :expression (fn [expr] `(new ExpressionStmt ~expr)))

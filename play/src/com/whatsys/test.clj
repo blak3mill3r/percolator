@@ -17,25 +17,25 @@
     'on-key-up  (interpreter [& statements] `( 'method #{:public} void onKeyUp [ (KeyUpEvent e) ] ~@statements ))
    })
 
-(add-statement-interpreters
-  { '(quote disable)    (interpreter [o]   `( '. ~o setEnabled false      ))
-    '(quote enable)     (interpreter [o]   `( '. ~o setEnabled true       ))
-    '(quote select-all) (interpreter [o]   `( '. ~o selectAll             ))
-    '(quote hide)       (interpreter [o]   `( '. ~o hide                  ))
-    '(quote show)       (interpreter [o]   `( '. ~o show                  ))
-    '(quote focus)      (interpreter [o]   `( '. ~o setFocus true         ))
-    '(quote unfocus)    (interpreter [o]   `( '. ~o setFocus false        ))
-    '(quote center)     (interpreter [o]   `( '. ~o center                ))
-    '(quote set-widget) (interpreter [o s] `( '. ~o setWidget       ~s    ))
-    '(quote add)        (interpreter [o s] `( '. ~o add             ~s    ))
-    '(quote set-text)   (interpreter [o s] `( '. ~o setText         ~s    ))
-    '(quote style)      (interpreter [o s] `( '. ~o addStyleName    ~s    ))
-    '(quote unstyle)    (interpreter [o s] `( '. ~o removeStyleName ~s    ))
-    '(quote html=)      (interpreter [o s] `( '. ~o setHTML         ~s    ))
-    '(quote on-click)   on-click
-    '(quote async)      async-rpc
-    '(quote button)     (interpreter [n] `( 'local #{:final} Button    (~n ('new Button      )) ))
-    '(quote dialog-box) (interpreter [n] `( 'local #{:final} DialogBox (~n ('new DialogBox   )) ))
+(add-interpreters-to-scope :statement
+  { 'disable    (interpreter [o]   `( '. ~o setEnabled false      ))
+    'enable     (interpreter [o]   `( '. ~o setEnabled true       ))
+    'select-all (interpreter [o]   `( '. ~o selectAll             ))
+    'hide       (interpreter [o]   `( '. ~o hide                  ))
+    'show       (interpreter [o]   `( '. ~o show                  ))
+    'focus      (interpreter [o]   `( '. ~o setFocus true         ))
+    'unfocus    (interpreter [o]   `( '. ~o setFocus false        ))
+    'center     (interpreter [o]   `( '. ~o center                ))
+    'set-widget (interpreter [o s] `( '. ~o setWidget       ~s    ))
+    'add        (interpreter [o s] `( '. ~o add             ~s    ))
+    'set-text   (interpreter [o s] `( '. ~o setText         ~s    ))
+    'style      (interpreter [o s] `( '. ~o addStyleName    ~s    ))
+    'unstyle    (interpreter [o s] `( '. ~o removeStyleName ~s    ))
+    'html=      (interpreter [o s] `( '. ~o setHTML         ~s    ))
+    'on-click   on-click
+    'async      async-rpc
+    'button     (interpreter [n] `( 'local #{:final} Button    (~n ('new Button      )) ))
+    'dialog-box (interpreter [n] `( 'local #{:final} DialogBox (~n ('new DialogBox   )) ))
     })
 
 (definterpreter gwt-new [class-name]
@@ -56,8 +56,8 @@
      ( 'focus closeButton )
      ))
 
-(add-statement-interpreters
-  { '(quote show-dialog) show-dialog
+(add-interpreters-to-scope :statement
+  { 'show-dialog show-dialog
    })
 
 (wrap-a-class-kluge

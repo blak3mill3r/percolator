@@ -38,22 +38,9 @@
      parent-scope)
     identity ))
 
-;(defn kkkkk [scope]
-;  (let [ inherited-scopes      (scope-inheritance scope)
-;         inherited-scope-names (map first inherited-scopes)
-;         interpreters-for-scopes 
-;           (map #(
-;                  interpreters ( first %1 )
-;                  ) inherited-scopes)
-;         
-;        ]
-;    interpreters-for-scopes))
-;    ;(reduce merge {} interpreters-for-scopes) ))
-;(map #( interpreters ( first %1 ) ) (scope-inheritance :test))
-;interpreters
-;(map println interpreters)
-
-(defn gimmegimme []
+; a map of scope names to
+; maps of syntax keys to the (originating) scope name
+(defn scope-inheritance-name-map []
   (reduce merge {} 
     (reverse
       (map (fn [a] (reduce
@@ -61,62 +48,6 @@
                      {}
                      (last a)))
       interpreters))))
-
-;(gimmegimme)
-;
-;        (reduce (fn [altered-map [k v]] (assoc altered-map k (f v))) {} m)
-;interpreters
-;
-;(map #(%2) interpreters)
-;
-;(def ppp (kkkkk :test))
-;ppp
-;
-;scope-inheritance
-
-;(let [set #(if (set? %) % #{%})]
-;  #(clojure.set/union (set %) (set %2)))
-;
-;(reduce merge )
-;(merge {} {})
-;
-;(let [map #(if (map? %) % {})]
-;  #(merge (map %1) (map %2)))
-;
-;( ( (interpreters :testparent) 'foo) )
-;( ( (interpreters :testotherparent) 'foo) )
-;(add-interpreters-to-scope :testparent
-;                           {
-;                            'foo (fn [] 3)
-;                            })
-;(add-interpreters-to-scope :testotherparent
-;                           {
-;                            'woo (fn [] 4)
-;                            })
-
-;(interpret-in-scope :test
-;                    '('foo ))
-
-;scope-inheritance
-;(((inherited-interpreters :test) 'foo) )
-;( (inherited-interpreter-wrapper :test :testparent) 1)
-;( (inherited-interpreter-wrapper :test :testotherparent) 1)
-;( ( (inherited-interpreters :test) 'foo))
-;(first (inherited-interpreters :test))
-;( ( (first (inherited-interpreters :test)) 'foo))
-;( ( (last (inherited-interpreters :test)) 'foo))
-;
-;(add-interpreters-to-scope :test
-;                           { 'war (fn [] 1) }
-;                           )
-;(inherit-scope :test :testparent (fn [x] x))
-;(inherit-scope :test :testotherparent (fn [x] (+ x 100)))
-;;
-;(interpreters :test)
-;scope-inheritance
-;
-;(reset-scope :test)
-
 
 (defn extract-interpreter-key-from-form [form]
   (if
@@ -134,24 +65,12 @@
       (let [ inherited
                (( inherited-interpreters scope) interpreter-key)
              scope-inherited-from
-               ( (gimmegimme) interpreter-key )
+               ( (scope-inheritance-name-map) interpreter-key )
              wrapper
                ( inherited-interpreter-wrapper scope scope-inherited-from )
             ]
-        (do
-          (println "scope")
-          (println scope)
-          (println "form")
-          (println form)
-          (println "inherited")
-          (println inherited)
-          (println "scope inherited from")
-          (println scope-inherited-from)
-          (println "wrapper")
-          (println wrapper)
-          (println "wrapper called with 1")
-          (println ( wrapper 1 ))
-          (if inherited (fn [form] (wrapper (inherited form)))) )))))
+        (if inherited
+          (fn [& args] (wrapper (apply inherited args))))))))
 
 (defn interpret-in-scope [scope form]
   (let [ interpreter            (interpreter-for-scope-and-form scope form)
@@ -163,15 +82,3 @@
       ( let [ eval-result (eval form) ]
         ( if (interpreter-for-scope-and-form scope eval-result)
           (recur scope eval-result) eval-result )))))
-
-;(interpret-in-scope :expression
-;                    '('break)
-;                    )
-
-
-;(interpret-in-scope :expression
-;                    5.0
-;                    "FOobar"
-;                    5
-;                    )
-
