@@ -11,11 +11,18 @@
   (merge interpreters
          {scope {}}))
 
+(defn extract-interpreter-key-from-form [form]
+  (if
+    (seq? form)
+    (if
+      ( = 'quote (first form) ) 
+        (last form))))
+
 (defn interpreter-for-scope-and-form [scope form]
-  (let [ root-interpreters (scope interpreters)
-         interpreter-key   (if (seq? form) (first form) (class form))
+  (let [ root-interpreters (or (scope interpreters) {})
+         interpreter-key   (if (seq? form) (extract-interpreter-key-from-form (first form)) (class form))
         ]
-    (root-interpreters interpreter-key)))
+      (root-interpreters interpreter-key) ))
 
 (defn interpret-in-scope [scope form]
   (let [ root-interpreter       (interpreter-for-scope-and-form scope form)
@@ -31,22 +38,23 @@
 (reset-scope :expression)
 (add-interpreters-to-scope
   :expression
-  { '(quote break)      (fn []              `(new BreakStmt)                               )
+  { 'break              (fn []              `(new BreakStmt)                               )
     java.lang.String    (fn [string]        `(new StringLiteralExpr ~string)               )
     java.lang.Long      (fn [long]          `(new LongLiteralExpr    ~(.toString long)    ))
     java.lang.Boolean   (fn [bool]          `(new BooleanLiteralExpr ~bool                ))
     java.lang.Character (fn [char]          `(new CharLiteralExpr    ~(.toString char)    ))
     java.lang.Double    (fn [double]        `(new DoubleLiteralExpr  ~(.toString double)  ))   ; to add floats as well will require some extra percolator syntax hint
-    nil                 (fn [scope & a]     `(new NullLiteralExpr                          ))  ;; not 100% sure this is a good idea
    })
+
 
 ;(interpret-in-scope :expression
 ;                    '('break)
 ;                    )
-;
+
+
 ;(interpret-in-scope :expression
-;                    nil
 ;                    5.0
 ;                    "FOobar"
+;                    5
 ;                    )
 
