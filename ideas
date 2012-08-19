@@ -84,3 +84,14 @@ instead of
               :inherits { :expression expr-to-stmt } }
 }
 
+
+what if I leave scope def as is
+and have 1 more data structure to describe inheritance?
+
+(def scope-inheritance
+  { :statement [ :expression (fn [expr] `(new ExpressionStmt ~expr)) ] }
+)
+
+good stuff
+make it wrap
+then do statement

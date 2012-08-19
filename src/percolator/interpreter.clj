@@ -8,7 +8,7 @@
          merged   (merge existing new-interpreters) ]
     ( def interpreters (assoc interpreters scope merged))))
 
-(defn inherit-scope [scope parent & wrapper]
+(defn inherit-scope [scope parent wrapper]
   (let [ existing  (scope-inheritance scope)
          modified  (conj existing [parent wrapper])
         ]
@@ -32,6 +32,48 @@
         ]
     (reduce merge {} interpreters-for-scopes) ))
 
+(defn inherited-interpreter-wrapper [scope parent-scope]
+  (or
+    ((reduce merge {} (scope-inheritance scope))
+     parent-scope)
+    identity ))
+
+;(defn kkkkk [scope]
+;  (let [ inherited-scopes      (scope-inheritance scope)
+;         inherited-scope-names (map first inherited-scopes)
+;         interpreters-for-scopes 
+;           (map #(
+;                  interpreters ( first %1 )
+;                  ) inherited-scopes)
+;         
+;        ]
+;    interpreters-for-scopes))
+;    ;(reduce merge {} interpreters-for-scopes) ))
+;(map #( interpreters ( first %1 ) ) (scope-inheritance :test))
+;interpreters
+;(map println interpreters)
+
+(defn gimmegimme []
+  (reduce merge {} 
+    (reverse
+      (map (fn [a] (reduce
+                     (fn [map-to-scope-name [k v]] (assoc map-to-scope-name k (first a)))
+                     {}
+                     (last a)))
+      interpreters))))
+
+;(gimmegimme)
+;
+;        (reduce (fn [altered-map [k v]] (assoc altered-map k (f v))) {} m)
+;interpreters
+;
+;(map #(%2) interpreters)
+;
+;(def ppp (kkkkk :test))
+;ppp
+;
+;scope-inheritance
+
 ;(let [set #(if (set? %) % #{%})]
 ;  #(clojure.set/union (set %) (set %2)))
 ;
@@ -49,11 +91,16 @@
 ;                            })
 ;(add-interpreters-to-scope :testotherparent
 ;                           {
-;                            'foo (fn [] 4)
+;                            'woo (fn [] 4)
 ;                            })
 
+;(interpret-in-scope :test
+;                    '('foo ))
+
 ;scope-inheritance
-;(inherited-interpreters :test)
+;(((inherited-interpreters :test) 'foo) )
+;( (inherited-interpreter-wrapper :test :testparent) 1)
+;( (inherited-interpreter-wrapper :test :testotherparent) 1)
 ;( ( (inherited-interpreters :test) 'foo))
 ;(first (inherited-interpreters :test))
 ;( ( (first (inherited-interpreters :test)) 'foo))
@@ -63,8 +110,8 @@
 ;                           { 'war (fn [] 1) }
 ;                           )
 ;(inherit-scope :test :testparent (fn [x] x))
-;(inherit-scope :test :testotherparent (fn [x] x))
-;
+;(inherit-scope :test :testotherparent (fn [x] (+ x 100)))
+;;
 ;(interpreters :test)
 ;scope-inheritance
 ;
@@ -84,7 +131,27 @@
         ]
     (or
       (root-interpreters interpreter-key)
-      (( inherited-interpreters scope) interpreter-key))))
+      (let [ inherited
+               (( inherited-interpreters scope) interpreter-key)
+             scope-inherited-from
+               ( (gimmegimme) interpreter-key )
+             wrapper
+               ( inherited-interpreter-wrapper scope scope-inherited-from )
+            ]
+        (do
+          (println "scope")
+          (println scope)
+          (println "form")
+          (println form)
+          (println "inherited")
+          (println inherited)
+          (println "scope inherited from")
+          (println scope-inherited-from)
+          (println "wrapper")
+          (println wrapper)
+          (println "wrapper called with 1")
+          (println ( wrapper 1 ))
+          (if inherited (fn [form] (wrapper (inherited form)))) )))))
 
 (defn interpret-in-scope [scope form]
   (let [ interpreter            (interpreter-for-scope-and-form scope form)
