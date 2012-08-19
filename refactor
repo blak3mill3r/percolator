@@ -1,0 +1,15 @@
+src/percolator/statement.clj:89:(defn add-statement-interpreters [statement-interpreters]
+src/percolator/declaration.clj:118:(defn add-body-decl-interpreters [body-decl-interpreters]
+src/percolator/expression.clj:226:(defn add-expression-interpreters [expression-interpreters]
+README.md:67:(add-statement-interpreters
+play/src/com/whatsys/test.clj:15:(add-body-decl-interpreters
+play/src/com/whatsys/test.clj:20:(add-statement-interpreters
+play/src/com/whatsys/test.clj:44:(add-expression-interpreters
+play/src/com/whatsys/test.clj:60:(add-statement-interpreters
+play/war/WEB-INF/classes/com/whatsys/test.clj:15:(add-body-decl-interpreters
+play/war/WEB-INF/classes/com/whatsys/test.clj:20:(add-statement-interpreters
+play/war/WEB-INF/classes/com/whatsys/test.clj:44:(add-expression-interpreters
+play/war/WEB-INF/classes/com/whatsys/test.clj:60:(add-statement-interpreters
+play/notes:48:(add-statement-interpreters {}) etc
+play/notes:49:(add-interpreters-to-scope :statement {})
+play/notes:60:add-interpreters-to-scope

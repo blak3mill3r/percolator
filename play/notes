@@ -48,6 +48,34 @@ so instead of
 (add-statement-interpreters {}) etc
 (add-interpreters-to-scope :statement {})
 
+what does add-interpreters-to-scope do?
+merges map of user-defined interpreters, for the given scope
+that's it, to make it do what it does now
+then deal with inheritance
+before inheritance, there will be duplication to make ExpressionStmt work
+sort of duplication ... there will be a statement interpreter which simply calls interpret-expression
+and all the keys in expression-interpreters are there in statement-interpreters
+that wrapping logic (taking the result of interpreting a form in one scope, ITC expression, and passing that through some function when it's interpreted in the other scope, ITC statement) is a reuseable pattern
+abstract it away!
+
+that pattern is:
+interpret-in-scope :statement
+there's a structure representing the :statement scope's inherited scope :expression
+along with the wrapper, which looks like
+(fn [form] `(new ExpressionStmt ~( form )))
+where form would be the result of (interpret-in-scope :expression form)
+where that form is the parameter to (interpret-in-scope :statement form)
+
+interpret-* and add-*-interpreters
+cannot be refactored into
+interpret-in-scope :ascope and add-interpreters-to-scope
+without this inheritance being part of it
+since the logic exists currently in interpret-statement
+and that is to be abstracted away
+
+
+
+
 (interpret-statement form)
 (interpret-in-scope :statement form)
 
