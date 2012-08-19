@@ -12,9 +12,9 @@
      ('new ClickHandler
        ( 'method #{:public} void onClick [ (ClickEvent e) ] ~@statements ))))
 
-(add-body-decl-interpreters
-  { '(quote on-click)   (interpreter [& statements] `( 'method #{:public} void onClick [ (ClickEvent e) ] ~@statements ))
-    '(quote on-key-up)  (interpreter [& statements] `( 'method #{:public} void onKeyUp [ (KeyUpEvent e) ] ~@statements ))
+(add-interpreters-to-scope :body-decl
+  { 'on-click   (interpreter [& statements] `( 'method #{:public} void onClick [ (ClickEvent e) ] ~@statements ))
+    'on-key-up  (interpreter [& statements] `( 'method #{:public} void onKeyUp [ (KeyUpEvent e) ] ~@statements ))
    })
 
 (add-statement-interpreters
@@ -41,7 +41,6 @@
 (definterpreter gwt-new [class-name]
   `( '. GWT create ( 'class-expr ~class-name ) ))
 
-;indeed this is fucking something up
 (add-interpreters-to-scope :expression
   { 'gwt-new gwt-new })
 
