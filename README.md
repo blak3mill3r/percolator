@@ -89,10 +89,10 @@ You cannot yet:
 
 ## Usage
 
-WYSIWYG. I've been experimenting with it in vim. It uses leiningen, and I use vimclojure. You might be able to toy with it the way I have been:
+WYSIWYG. I've been experimenting with it in vim. It uses leiningen, and I use VimClojure. You might be able to toy with it the way I have been:
 ```bash
 $ cd percolator/play
-$ lein vimclojure
+$ lein nailgun
 $ vim src/com/whatsys/test.clj
 ```
 and then eval percolator stuff in vim... if you are very fortunate, you might get compilable java source code in a vim buffer. Paste it into Play.java and try something along the lines of
