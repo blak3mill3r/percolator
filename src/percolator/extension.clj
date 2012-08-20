@@ -1,6 +1,6 @@
 (in-ns 'percolator.core)
 
-;trickery (dirty hack?) to allow more comfortable interpreter definition syntax
+;trickery (dirty hack?) to allow more comfortable definterpreter syntax
 ;for extensions to percolator
 ;meaning, not having to type ~' before each unqualified symbol
 ;I don't know if there's a more sensible way to do this

@@ -60,8 +60,10 @@
   { 'show-dialog show-dialog
    })
 
-(wrap-a-class-kluge
+(compilation-unit
+  ; package name
   com.whatsys.client
+  ; imports
   [ com.whatsys.shared.FieldVerifier
     com.google.gwt.core.client.EntryPoint
     com.google.gwt.core.client.GWT
@@ -79,129 +81,124 @@
     com.google.gwt.user.client.ui.TextBox
     com.google.gwt.user.client.ui.VerticalPanel ]
 
-  (class-decl
+  ; declare a public class Play
+  (class-decl #{:public} Play
 
-  #{:public} Play
-
+    ; which implements the EntryPoint interface
     ( 'implements EntryPoint )
 
+    ; declare a static String field called SERVER_ERROR and initialize it
     ( 'field #{:private :static :final} String (SERVER_ERROR "D'oh!") )
 
-    ( 'field #{:private :final} GreetingServiceAsync (greetingService ( 'gwt-new GreetingService )) )
+    ; declare a member field of type GreetingServiceAsync and initialize it
+    ( 'field #{:private :final} GreetingServiceAsync ( greetingService ('gwt-new GreetingService) ) )
 
+    ; define a public, nullary method called onModuleLoad, returning void
     ( 'method #{:public} void onModuleLoad []
+      ; declare and initialize local variables sendButton and nameField
       ( 'local #{:final} Button  (sendButton ('new Button "Send")) )
       ( 'local #{:final} TextBox (nameField ('new TextBox)) )
+      ; call the method setText on the object nameField with the parameter "GWT User"
       ( '. nameField setText "GWT User" )
+
+      ; getting obvious...
       ( 'local #{:final} Label (errorLabel ('new Label)) )
       ( '. sendButton addStyleName "sendButton" )
 
+      ; of course expressions nest
+      ; everything up to this point is using just percolator core
+      ; here, 'add is a shorthand we defined above
+      ; it is a percolator interpreter in the scope :statement
       ( 'add  ( '. RootPanel get "nameFieldContainer"  ) nameField )
       ( 'add  ( '. RootPanel get "sendButtonContainer" ) sendButton )
       ( 'add  ( '. RootPanel get "errorLabelContainer" ) errorLabel )
 
-      ;( 'add ( '>RootPanel/nameFieldContainer ) nameField )
-        ; cool idea
-        ; if a symbol starts with a special character like > above
-        ; it is a special gwt-specific expression
-        ; such as apanel.get("a_domid")
-
+      ; some more trivial examples of user-defined interpreters
       ( 'focus nameField )
       ( 'select-all nameField )
 
-      ; would be nice if above could be written
-      ;( 'doto nameField
-      ;  ('focus)
-      ;  ('select-all))
-
+      ; this user-defined interpreter is declaring a local variable of class
+      ; DialogBox with the name dialogBox, and initializing it with the default
+      ; constructor
       ( 'dialog-box dialogBox )
 
+      ; calling methods on it
       ( '. dialogBox setText "RPC" )
       ( '. dialogBox setAnimationEnabled true )
 
+      ; similarly declaring a local button
       ( 'button closeButton )
 
+      ; set the DOM id of the element associated with the close button
       ( '. ( '. closeButton getElement ) setId "closeButton" )
 
       ( 'local #{:final} Label ( textToServerLabel ( 'new Label )) )
       ( 'local #{:final} HTML ( serverResponseLabel ( 'new HTML )) )
 
-        ;; this whole bit is the part to rewrite
+      ; make a vertical panel
       ( 'local #{} VerticalPanel ( dialogVPanel ( 'new VerticalPanel )) )
 
+      ; give it a CSS class, and start adding things to it
       ( 'style dialogVPanel "dialogVPanel" )
+      ; it'd be nice integrate hiccup here:
       ( 'add dialogVPanel ( 'new HTML "<b> Sending name to the server: </b>" ) )
       ( 'add dialogVPanel textToServerLabel )
+      ; and removing the repetition with some new interpreters
       ( 'add dialogVPanel ( 'new HTML "<br><b> Server replies: </b>" ) )
       ( 'add dialogVPanel serverResponseLabel )
       ( '. dialogVPanel setHorizontalAlignment VerticalPanel/ALIGN_RIGHT )
 
+      ; stuff dialog panel in dialog box
       ( 'set-widget dialogBox dialogVPanel )
-        ; ending here...
 
-      ; rewrite above as
-      ;   (comment
-
-      ;( 'vpanel dialogVPanel )
-
-           ; a series of panel manipulations
-           ; a new percolator "scope"
-           ; the existing scopes being body-decl statement and expression
-           ; so make this work, and then see if the commonalities in the
-           ; definitions of the different scopes can be abstracted away
-           ; so '<-- would be a statement interpreter
-           ; producing a BlockStmt
-           ; kinda like a doto but the forms are panel manipulations
-      ;( '<-- dialogVPanel
-      ;  :.dialogVPanel             ; keyword starting with . css style name
-      ;  :#foo                      ; keyword starting with # dom id
-      ;  "<b>Sending name etc </b>" ; straight HTML
-      ;  textToServerLabel          ; symbol not beginning with . is a widget to add
-      ;  [ :b "Server Response" ]   ; hiccup, would be insanely cool to support run-time variables in here
-      ;  serverResponseLabel        
-      ;  :align-right               ; keyword are special syntax that map to special things like setHorizontalAlignment VerticalPanel/ALIGN_RIGHT
-      ;)
-
-      ;     )
-
+      ; this does exactly what it looks like
       ( 'on-click closeButton
         ( 'hide dialogBox )
         ( 'enable sendButton )
         ( 'focus sendButton ))
 
       ( 'class #{} MyHandler
-        ( 'implements ClickHandler KeyUpHandler ) ; TODO it would be cool if this could be inferred from the use of 'on-click etc as body-decls, first need to make 'implements merge
+        ( 'implements ClickHandler KeyUpHandler )
 
         ( 'on-click ( '. this sendNameToServer ))
 
+        ; in this handler method, there's an if branch
+        ; e.getNativeKeyCode() == KeyCodes/KEY_ENTER
         ( 'on-key-up
           ( 'if ( '==
                   ( '. e getNativeKeyCode )
                   KeyCodes/KEY_ENTER )
             (('. this sendNameToServer ))))
 
+        ; okay, moment of truth, the user has pressed and released the <Enter> key
         ( 'method #{:public} void sendNameToServer []
           ( 'set-text errorLabel "" )
 
+          ; accepting input from the user...
           ( 'local #{} String (textToServer ('. nameField getText)) )
 
+          ; if it ain't right, complain and quit...
           ( 'if ('! ('. FieldVerifier isValidName textToServer))
-              ( ('. errorLabel setText "Please do the thing right")
+              ( ('. errorLabel setText "I'm afraid I can't let you do that, Dave...")
                 ( 'return )))
 
           ( 'set-text textToServerLabel textToServer )
           ( 'set-text serverResponseLabel "" )
 
-         ( 'async greeting/greet [(String result)]
-           (( 'set-text dialogBox "RPC Success Sauce (hax)" )
-            ( 'unstyle serverResponseLabel "serverResponseLabelError" )
-            ( 'show-dialog result ))
-           (( 'set-text dialogBox "megaFAIL" )
-            ( 'style serverResponseLabel "serverResponseLabelError" )
-            ( 'show-dialog SERVER_ERROR )))
-            )
+          ; here we gonna call the GWT-generated client-side RPC jibber jabber
+          ( 'async greeting/greet [(String result)]
+            ; and in the unlikely event of the server actually responding...
+            (( 'set-text dialogBox "We have received a message. It would appear that it is from the server, m'lud." )
+             ( 'unstyle serverResponseLabel "serverResponseLabelError" )
+             ( 'show-dialog result ))
+            ; typical howling emptiness or bitter defeat...
+            (( 'set-text dialogBox "something is wrong :(" )
+             ( 'style serverResponseLabel "serverResponseLabelError" )
+             ( 'show-dialog SERVER_ERROR )))
+             )
         ); end class MyHandler
 
+      ; instantiate one and bind it to events
       ( 'local #{} MyHandler ( handler ('new MyHandler )))
       ( '. sendButton addClickHandler handler )
       ( '. nameField addKeyUpHandler handler )

@@ -95,3 +95,41 @@ and have 1 more data structure to describe inheritance?
 good stuff
 make it wrap
 then do statement
+
+PASTED FROM test.clj
+
+      ;( 'add ( '>RootPanel/nameFieldContainer ) nameField )
+        ; cool idea
+        ; if a symbol starts with a special character like > above
+        ; it is a special gwt-specific expression
+        ; such as apanel.get("a_domid")
+
+      ; would be nice if above could be written
+      ;( 'doto nameField
+      ;  ('focus)
+      ;  ('select-all))
+
+      ; rewrite above as
+      ; NOTE: this is purely imaginary
+      ;   (comment
+
+      ;( 'vpanel dialogVPanel )
+
+      ;    ; a series of panel manipulations
+      ;    ; so '<-- would be a statement interpreter
+      ;    ; producing a BlockStmt
+      ;    ; kinda like a doto but the forms are panel manipulations
+      ;( '<-- dialogVPanel
+      ;  :.dialogVPanel             ; keyword starting with . css style name
+      ;  :#foo                      ; keyword starting with # dom id
+      ;  "<b>Sending name etc </b>" ; straight HTML
+      ;  textToServerLabel          ; symbol not beginning with . is a widget to add
+      ;  [ :b "Server Response" ]   ; hiccup, would be insanely cool to support run-time variables in here
+      ;  serverResponseLabel        
+      ;  :align-right               ; keyword are special syntax that map to special things like setHorizontalAlignment VerticalPanel/ALIGN_RIGHT
+      ;)
+
+      ;     )
+
+      ; back to stuff that works...
+
