@@ -73,7 +73,7 @@ public class Play implements EntryPoint {
                 errorLabel.setText("");
                 String textToServer = nameField.getText();
                 if (!FieldVerifier.isValidName(textToServer)) {
-                    errorLabel.setText("Please do the thing right");
+                    errorLabel.setText("I'm afraid I can't let you do that, Dave...");
                     return;
                 }
                 textToServerLabel.setText(textToServer);
@@ -81,7 +81,7 @@ public class Play implements EntryPoint {
                 greetingService.greetServer(textToServer, new AsyncCallback<String>() {
 
                     public void onSuccess(String result) {
-                        dialogBox.setText("RPC Success Sauce (hax)");
+                        dialogBox.setText("We have received a message. It would appear that it is from the server, m'lud.");
                         serverResponseLabel.removeStyleName("serverResponseLabelError");
                         {
                             serverResponseLabel.setHTML(result);
@@ -91,7 +91,7 @@ public class Play implements EntryPoint {
                     }
 
                     public void onFailure(java.lang.Throwable e) {
-                        dialogBox.setText("megaFAIL");
+                        dialogBox.setText("something is wrong :(");
                         serverResponseLabel.addStyleName("serverResponseLabelError");
                         {
                             serverResponseLabel.setHTML(SERVER_ERROR);
