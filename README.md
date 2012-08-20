@@ -76,6 +76,8 @@ by extending percolator like:
 
 It works. There's an example at [./play/src/com/whatsys/test.clj](https://github.com/blak3mill3r/percolator/blob/master/play/src/com/whatsys/test.clj) which compiles with the GWT compiler.
 
+Here's the intermediate form [./play/src/com/whatsys/client/Play.java](https://github.com/blak3mill3r/percolator/blob/master/play/src/com/whatsys/client/Play.java)
+
 ## Notably missing
 
 You cannot yet:
