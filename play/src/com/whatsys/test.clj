@@ -12,12 +12,12 @@
      ('new ClickHandler
        ( 'method #{:public} void onClick [ (ClickEvent e) ] ~@statements ))))
 
-(add-interpreters-to-scope :body-decl
+(add-interpreters-to-scope :gwt-body-decl
   { 'on-click   (interpreter [& statements] `( 'method #{:public} void onClick [ (ClickEvent e) ] ~@statements ))
     'on-key-up  (interpreter [& statements] `( 'method #{:public} void onKeyUp [ (KeyUpEvent e) ] ~@statements ))
    })
 
-(add-interpreters-to-scope :statement
+(add-interpreters-to-scope :gwt-statement
   { 'disable    (interpreter [o]   `( '. ~o setEnabled false      ))
     'enable     (interpreter [o]   `( '. ~o setEnabled true       ))
     'select-all (interpreter [o]   `( '. ~o selectAll             ))
@@ -37,6 +37,8 @@
     'button     (interpreter [n] `( 'local #{:final} Button    (~n ('new Button      )) ))
     'dialog-box (interpreter [n] `( 'local #{:final} DialogBox (~n ('new DialogBox   )) ))
     })
+
+(inherit-scope :statement :gwt-statement identity)
 
 (definterpreter gwt-new [class-name]
   `( '. GWT create ( 'class-expr ~class-name ) ))
