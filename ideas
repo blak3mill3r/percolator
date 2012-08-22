@@ -1,100 +1,38 @@
+GOOD IDEA
+  scope inheritance
+  right now it's a list of inherited scopes for each scope
+  but they aren't recursive
+  need a clojure graph library or something
+  and it should call each wrapper as it traverses the graph
+
+
+
 can bits of percolator internals be refactored for simmplicity w/ definterpreter?
 no, bad idea, because
 definterpreter is for making macro-ey forms that build percolator forms
 no real need for it in core I think
 maybe there will be, but percolator internals now (defn interpret-expression-*) are fine
 
+GWT essentials
 
-scopes generic is what matters most...
-scopes built in to percolator:
-statement body-decl expression
-that's it I think
-
-
-thoughts on the multimethod inf
-which is to allow clojure literals
-to be translated into java-literal-expression clojure expressions
-and I want it to allow user to override somehow
-defining for a given scope what to do with a java.lang.Double
+  RPC - works
+  History management
+  Bookmarking? from Wikipedia
+  i18n
+  Code splitting!
+  UiBinder xml crap wrapper
+  resource bundling
 
 
-so now it's a multimethod dispatching on the class of form
-that's correctish...
-but those need to be made generic and respect scopes hierarchy
+Mobile?
+   An HTML5 app written in GWT can have separate views for Tablets and Mobile phones.
 
+   Some of the most common mobile GWT libraries
+    
+   m-gwt
+   GwtMobile
+   gwt-mobile-webkit
 
-right now my scopes hierarchy is a map of scope-name-symbol
-to maps of first-forms to functions
-
-that way the maps for each scope can be
-key-> either one of
-  '(quote foo)
-  java.lang.String
-
-THAT IS GOOD
-
-
-maybe instead of interpret-in-scope being the multimethod
-interpreter-for-scope-and-form could be
-that sounds better
-
-YAY it works
-no multimethod at all, just doing it manually
-in interpreter-for-scope-and-form
-
-
-this is pretty good
-now you have scope :expression working
-
-
-One thing I should fix
-
-the keys '(quote break)
-that's dumb
-because every single form which is seq?
-has to look through that
-instead it should look at the form and see if it's first is a list beginning with the literal symbol quote
-and iff so, do the map lookup
-FIX THAT
-DONE fixed
-
-now to refactor expression.clj
-
-
-
-done, and done with body-decl
-
-good stuff
-
-
-now for statement
-which needs inheritance from expression
-
-so current scopes definition needs to be changed
-
-instead of
-
-{:expression {'this this-expr}
- :statement {}
-}
-
-
-{:expression { :interpreters {'this this-expr} }
- :statement { :interpreters { 'break break-stmt }
-              :inherits { :expression expr-to-stmt } }
-}
-
-
-what if I leave scope def as is
-and have 1 more data structure to describe inheritance?
-
-(def scope-inheritance
-  { :statement [ :expression (fn [expr] `(new ExpressionStmt ~expr)) ] }
-)
-
-good stuff
-make it wrap
-then do statement
 
 PASTED FROM test.clj
 
