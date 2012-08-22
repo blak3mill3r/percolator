@@ -107,6 +107,7 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
 (load-file "/home/blake/w/percolator/src/percolator/japaparser.clj")
 (load-file "/home/blake/w/percolator/src/percolator/statement.clj")
 (load-file "/home/blake/w/percolator/src/percolator/type.clj")
+(load-file "/home/blake/w/percolator/src/test/test.clj")
 
 (defmacro compilation-unit [package-decl import-decls class-decl]
   `(new CompilationUnit
