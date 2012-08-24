@@ -7,7 +7,7 @@ is-class-modifier-option interpret-class-modifier-option interpret-body-decl-cto
 vomit-class-decl return-false add-two-to-s compilation-unit definterpreter interpreter reset-scope interpret-in-scope)
 
 (ns percolator.core
-  (:require [clojure.contrib.string :as string])
+  (:require [clojure.string :as string ])
   (:import
     (japa.parser.ast.body AnnotationDeclaration 
                           AnnotationMemberDeclaration 
@@ -98,13 +98,25 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
 
 (load "extension" "interpreter" "util" "expression" "declaration" "japaparser" "statement" "type")
 
+; a mapping of package/class names to clojure vars by a convention
+; which is used by percolator to identify compilation units in a namespace
+(defn cu-auto-name [package-name class-name]
+  (string/replace (string/join (map #(.toString %) ["cu-" package-name "--" class-name]))
+                  #"\."
+                  "-"))
+
+; the class name is the third form in the class-decl form
+(defn class-name-of [form] (nth form 2))
+
 (defmacro compilation-unit [package-decl import-decls class-decl]
-  `(new CompilationUnit
-    ~(interpret-package-declaration package-decl)
-    [~@(map interpret-import-decl import-decls)]
-    [~class-decl]
-    [] ;comments
-    ))
+  (let [ var-name (symbol (cu-auto-name package-decl (class-name-of class-decl))) ]
+   `(def ~var-name
+      (new CompilationUnit
+       ~(interpret-package-declaration package-decl)
+        [~@(map interpret-import-decl import-decls)]
+        [~class-decl]
+        [] ;comments FIXME add support
+        ))))
 
 (defmacro class-decl [& args]
   (apply interpret-body-decl-class args))

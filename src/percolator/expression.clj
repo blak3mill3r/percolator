@@ -57,7 +57,7 @@
 ; clojure symbols as a shorthand for NameExpr and FieldAccessExpr-of-NameExpr i.e. System or System/out
 (defn interpret-expression-symbol [symbol]
   (if (re-find #"^\w*\/\w*$" (.toString symbol))
-    (let [ name-and-field (string/split #"/" (.toString symbol)) ]
+    (let [ name-and-field (string/split (.toString symbol) #"/") ]
       `(new FieldAccessExpr (new NameExpr ~(first name-and-field)) ~(last name-and-field)))
     `(new NameExpr ~(.toString symbol))))
 
