@@ -36,9 +36,11 @@
     'async      async-rpc
     'button     (interpreter [n] `( 'local #{:final} Button    (~n ('new Button      )) ))
     'dialog-box (interpreter [n] `( 'local #{:final} DialogBox (~n ('new DialogBox   )) ))
+    'log        (interpreter [n] `( '. GWT log ~n ))
     })
 
 (inherit-scope :statement :gwt-statement identity)
+(inherit-scope :body-decl :gwt-body-decl identity)
 
 (definterpreter gwt-new [class-name]
   `( '. GWT create ( 'class-expr ~class-name ) ))
@@ -162,7 +164,10 @@
       ( 'class #{} MyHandler
         ( 'implements ClickHandler KeyUpHandler )
 
-        ( 'on-click ( '. this sendNameToServer ))
+        ( 'on-click
+            ( '. this sendNameToServer )
+            ( 'log "My balls are on fire" )
+            )
 
         ; in this handler method, there's an if branch
         ; e.getNativeKeyCode() == KeyCodes/KEY_ENTER

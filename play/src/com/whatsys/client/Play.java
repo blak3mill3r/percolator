@@ -61,6 +61,7 @@ public class Play implements EntryPoint {
 
             public void onClick(ClickEvent e) {
                 this.sendNameToServer();
+                GWT.log("My balls are on firey fire");
             }
 
             public void onKeyUp(KeyUpEvent e) {

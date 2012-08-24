@@ -1,3 +1,11 @@
+Yay for lein-gwt working and adding DevMode to it!
+
+Now... percolator needs to take a path and write .java files to it according to the java package/path convention
+That could integrate with leiningen java build process perhaps
+there's probably already something in a leiningen project definition for that (java src path)
+need to read about leiningen, does it timestamp files to know they need to be rebuilt or hash them?
+need an example of some other compilation process in leiningen
+
 GOOD IDEA
   scope inheritance
   right now it's a list of inherited scopes for each scope
