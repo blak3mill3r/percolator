@@ -78,12 +78,16 @@ It works. There's an example at [./play/src/com/whatsys/test.clj](https://github
 
 Here's the intermediate form [./play/src/com/whatsys/client/Play.java](https://github.com/blak3mill3r/percolator/blob/master/play/src/com/whatsys/client/Play.java)
 
+It is a goal of this library cover everything in the [Java 1.5 spec](http://docs.oracle.com/javase/1.5.0/docs/api/). There shouldn't be any valid Java source code that cannot be produced with percolator. It's not there yet, see below.
+
 ## Notably missing
 
 You cannot yet:
 
-* define a class with generics
-* You cannot express Java 'float' literals or literals of int types smaller than long
+* define a class with generics (but you can instantiate them, etc)
+* express Java 'float' literals or literals of int types smaller than long
+* express annotations at all
+* express Java array types
 * probably a lot more...
 * FIXME fill this in
 
@@ -97,10 +101,11 @@ $ vim src/com/whatsys/test.clj
 ```
 and then eval percolator stuff in vim... if you are very fortunate, you might get compilable java source code in a vim buffer. Paste it into Play.java and try something along the lines of
 ```bash
-$ ant devmode
+$ lein gwt
+$ lein gwt dev
 ```
 
-...to start your GWT devmode server
+...to compile with GWT and then start your devmode server
 
 If you try this out, I'd love to hear what you think.
 
