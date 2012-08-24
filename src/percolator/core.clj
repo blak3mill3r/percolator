@@ -99,15 +99,15 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
 
   )
 
-(load-file "src/percolator/extension.clj") ; rename extension, it is fundamental and will be used in percolator core
-(load-file "src/percolator/interpreter.clj")
-(load-file "src/percolator/util.clj")
-(load-file "src/percolator/expression.clj")
-(load-file "src/percolator/declaration.clj")
-(load-file "src/percolator/japaparser.clj")
-(load-file "src/percolator/statement.clj")
-(load-file "src/percolator/type.clj")
-(load-file "src/test/test.clj")
+(load "extension") ; rename extension, it is fundamental and will be used in percolator core
+(load "interpreter")
+(load "util")
+(load "expression")
+(load "declaration")
+(load "japaparser")
+(load "statement")
+(load "type")
+;(load "test/test")
 
 (defmacro compilation-unit [package-decl import-decls class-decl]
   `(new CompilationUnit
