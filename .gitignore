@@ -1,5 +1,4 @@
 /pom.xml
-*jar
 /lib
 /classes
 /native
@@ -9,3 +8,9 @@
 play/gwt-unitCache/*
 *.class
 play/war/WEB-INF/classes/
+play/war/WEB-INF/deploy/*
+*.jar
+*.class
+*~
+play/war/play
+play/war/WEB-INF/classes
