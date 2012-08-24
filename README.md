@@ -88,6 +88,7 @@ You cannot yet:
 * express Java 'float' literals or literals of int types smaller than long
 * express annotations at all
 * express Java array types
+* instantiate outer class from an inner class
 * probably a lot more...
 * FIXME fill this in
 

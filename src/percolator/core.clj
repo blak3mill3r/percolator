@@ -84,20 +84,17 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
                                StringLiteralExpr                ; done
                                SuperExpr                        ; done
                                ThisExpr                         ; done
-                               UnaryExpr                        ; FIXME TODO
+                               UnaryExpr                        ; done
                                UnaryExpr$Operator               ; done
                                VariableDeclarationExpr          ; done-ish? can do a simple local variable ... lacking array types
                                )
 ( japa.parser.ast.type ClassOrInterfaceType 
-                                PrimitiveType         ; a degrading term
-                                PrimitiveType$Primitive
-                                ReferenceType 
-                                Type
-                                VoidType              ; dude is going to build void rays
-                                WildcardType )
-    )
-
-  )
+                       PrimitiveType         ; a degrading term
+                       PrimitiveType$Primitive
+                       ReferenceType 
+                       Type
+                       VoidType              ; dude is going to build void rays
+                       WildcardType )))
 
 (load "extension" "interpreter" "util" "expression" "declaration" "japaparser" "statement" "type")
 

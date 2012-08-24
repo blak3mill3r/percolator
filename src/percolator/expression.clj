@@ -4,7 +4,6 @@
 
 (defn interpret-expression [form] (interpret-in-scope :expression form))
 
-
 ; symbol aliases
 ; which resolves to an Operator constant from japaparser
 (def japaparser-operator-constant
@@ -55,15 +54,12 @@
     '---          'japa.parser.ast.expr.UnaryExpr$Operator/posDecrement
   })
 
-; clojure symbols as a shorthand for NameExpr and FieldAccessExpr-of-NameExpr
-; i.e. System or System/out
+; clojure symbols as a shorthand for NameExpr and FieldAccessExpr-of-NameExpr i.e. System or System/out
 (defn interpret-expression-symbol [symbol]
   (if (re-find #"^\w*\/\w*$" (.toString symbol))
     (let [ name-and-field (string/split #"/" (.toString symbol)) ]
-      `(new FieldAccessExpr (new NameExpr ~(first name-and-field)) ~(last name-and-field))
-      )
-    `(new NameExpr ~(.toString symbol))
-    ))
+      `(new FieldAccessExpr (new NameExpr ~(first name-and-field)) ~(last name-and-field)))
+    `(new NameExpr ~(.toString symbol))))
 
 (defn split-arguments-and-body-decls [forms]
   (let [ arguments-and-body-decls
@@ -80,14 +76,12 @@
 
 (defn interpret-expression-new [type-name & arguments-and-maybe-anonymous-class-body]
   (let [{:keys [body-decls arguments]} (split-arguments-and-body-decls arguments-and-maybe-anonymous-class-body)]
-    `(doto
-       (new ObjectCreationExpr
-         nil  ; FIXME this argument, scope, can be used for instantiating outer classes from inner classes
-          ~(interpret-type type-name)
-          [ ~@(map interpret-expression arguments) ]
-          )
-        (.setAnonymousClassBody ~( when body-decls `[ ~@( map interpret-body-decl body-decls ) ] ))
-      )))
+    `(doto (new ObjectCreationExpr
+             nil  ; FIXME this argument, scope, can be used for instantiating outer classes from inner classes
+              ~(interpret-type type-name)
+              [ ~@(map interpret-expression arguments) ]
+              )
+            (.setAnonymousClassBody ~( when body-decls `[ ~@( map interpret-body-decl body-decls ) ] )))))
 
 (defn interpret-expression-super [& target-class]
   (if (first target-class)
@@ -113,7 +107,7 @@
             ~(japaparser-operator-constant operator))
       `(new UnaryExpr
             ~(interpret-expression operand-l)
-            ~(japaparser-operator-constant operator)))))
+            ~(japaparser-operator-type-unary operator)))))
 
 (defn interpret-expression-binary-operation [operator]
   (fn [operand-l operand-r]
