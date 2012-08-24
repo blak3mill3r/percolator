@@ -14,3 +14,6 @@ play/war/WEB-INF/deploy/*
 *~
 play/war/play
 play/war/WEB-INF/classes
+play/log
+play/checkouts
+play/pom.xml
