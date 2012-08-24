@@ -1,2 +1,0 @@
-serviceClass: com.whatsys.client.GreetingService
-path: D38428609EBD6716A4E5E83C1492C582.gwt.rpc
