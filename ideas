@@ -5,6 +5,64 @@ That could integrate with leiningen java build process perhaps
 there's probably already something in a leiningen project definition for that (java src path)
 need to read about leiningen, does it timestamp files to know they need to be rebuilt or hash them?
 need an example of some other compilation process in leiningen
+or the other idea below is good too
+just pre-task percolator before javac
+and make percolator system for skipping rebuilding when possible
+presumably lein is smart enough not to rebuild the 
+
+make a plugin lein-percolator
+depend on it
+somehow define in the project what classes there are to build?
+probably by listing namespaces in which all public fns return compilation-units
+the plugin calls every public fn in each namespace (how?) or maybe those matching a pattern?
+  ; user does
+  (def cu-one "my compilation unit")
+  ; plugin:
+  (map #(build-compilation-unit)
+       (filter
+    #(re-find #"^cu-" (.toString %))
+       (keys (ns-publics 'com.whatsys.test))))
+Good!
+  
+should be possible to use a perc macro for that
+  instead of (def cu-one)
+  just (compilation-unit package-name imports class-def)
+  that should be enough, ya?
+  it now has the class def and the package name
+  so it knows where to write the java file
+THATS GOOD
+  easy just make compilation-unit define a var in the current namespace pointing to the compilation-unit it currently returns
+  so it's just a matter of loading the user's cu defs
+  and then doing something like the above pattern matching
+  that way they can mix code in public fns in the same file with the compilation-unit defs
+
+plugin calls each cu fn and writes .java file to a path configured in the project
+now it's just a matter of shoehorning that src path into leiningen cp
+and then working out how it should integrate with builds
+you could put it as a pre-task before javac
+it needs a way to avoid rebuilding
+  if the hash of the clojure code that produced it hasn't changed
+    AND the input data is known to be the same
+    THEN you can skip the percolator build step
+  2nd one might be tricky
+    perhaps perc could have a way of hashing the inputs to compilation-units
+    or the user can override the hashing function
+    if it's fed all the input data to the cu
+    that hash can be used to skip rebuilding
+  1st one might not be 100% necessary
+    could be left up to the programmer to ensure that everything gets rebuilt
+    if he changes his perc macros
+    but it could be nice to have
+    not sure how it could be done though
+    easiest would be a convention, where to put .clj files that define cu and control their dependencies
+    by the time compilation-unit gets its inputs
+    they may have been macro-expanded
+    so perhaps hashing the form itself could let perc know if it needs to rebuild .java?
+  optimizations for later...
+for now it could just be a task I call manually
+  which calls every public fn matching a pattern in each namespace listed in project.clj for lein-percolator
+  writing a .java file to the appropiate path
+then I call lein gwt or whatever
 
 GOOD IDEA
   scope inheritance
@@ -12,8 +70,6 @@ GOOD IDEA
   but they aren't recursive
   need a clojure graph library or something
   and it should call each wrapper as it traverses the graph
-
-
 
 can bits of percolator internals be refactored for simmplicity w/ definterpreter?
 no, bad idea, because
@@ -30,7 +86,6 @@ GWT essentials
   Code splitting!
   UiBinder xml crap wrapper
   resource bundling
-
 
 Mobile?
    An HTML5 app written in GWT can have separate views for Tablets and Mobile phones.
