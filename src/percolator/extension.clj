@@ -1,11 +1,15 @@
 (in-ns 'percolator.core)
 
-;trickery (dirty hack?) to allow more comfortable definterpreter syntax
-;for extensions to percolator
-;meaning, not having to type ~' before each unqualified symbol
-;I don't know if there's a more sensible way to do this
-;but this does work and the dirtiness is at least contained :)
+; this file defines two macros 'interpreter' and 'definterpreter'
+; they are structurally a lot like clojure.core/fn and clojure.core/defn
+; these two macros are used to extend percolator
+; building forms which work sort of like clojure macros
+; by using backquotes and splicing in the body of an 'interpreter'
+; you can get macro-power for extending java-building code with percolator
+; that's the idea... I'm not 100% satisfied with the implementation below
 
+; meaning, not having to type ~' before each unqualified symbol in a backquote form in an 'interpreter' body
+; I don't know if there's a more sensible way to do this, but this does work and the dirtiness is at least contained :)
 (defn turn-unqualified-symbols-back-into-unqualified-symbols [form ns-name]
   (let [ qualifier-stripper
         (fn [symbol]
@@ -40,6 +44,9 @@
 ; NOT resolved in the current namespace as they would be with fn
 ; because they will later be interpreted by percolator which treats
 ; unqualified symbols specially in order to keep the percolator syntax clean
+;
+; I think this makes some sense
+; feedback welcome
 (defmacro interpreter
   "params => positional-params* , or positional-params* & next-param
   positional-param => binding-form
