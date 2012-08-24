@@ -78,7 +78,7 @@ It works. There's an example at [./play/src/com/whatsys/test.clj](https://github
 
 Here's the intermediate form [./play/src/com/whatsys/client/Play.java](https://github.com/blak3mill3r/percolator/blob/master/play/src/com/whatsys/client/Play.java)
 
-It is a goal of this library cover everything in the [Java 1.5 spec](http://docs.oracle.com/javase/1.5.0/docs/api/). There shouldn't be any valid Java source code that cannot be produced with percolator. It's not there yet, see below.
+It is a goal of this library cover everything in the [Java 1.5 spec](http://docs.oracle.com/javase/specs/). There shouldn't be any valid Java source code that cannot be produced with percolator. It's not there yet, see below. I have no plans to support Java 7, as the underlying library, javaparser, doesn't support it.
 
 ## Notably missing
 
