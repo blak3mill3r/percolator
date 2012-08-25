@@ -1,5 +1,5 @@
 (ns percolator.core)
-(declare expression-interpreter-for-form interpret-expression-again-or-identity interpret-statement-again-or-identity expression-interpreters interpret-declarator eval-and-interpret interpret-expression-binary-operation split-arguments-and-body-decls interpret-expression-this interpret-expression-variable-declaration interpret-expression-new interpret-expression-super japaparser-operator-type-unary interpret-expression-ambiguous-binary-or-unary-operation interpret-expression-assignment-operation japaparser-operator-constant interpret-expression interpret-expression-unary-operation interpret-expression-method-call
+(declare compilation-units-in-namespace expression-interpreter-for-form interpret-expression-again-or-identity interpret-statement-again-or-identity expression-interpreters interpret-declarator eval-and-interpret interpret-expression-binary-operation split-arguments-and-body-decls interpret-expression-this interpret-expression-variable-declaration interpret-expression-new interpret-expression-super japaparser-operator-type-unary interpret-expression-ambiguous-binary-or-unary-operation interpret-expression-assignment-operation japaparser-operator-constant interpret-expression interpret-expression-unary-operation interpret-expression-method-call
 primitive-type interpret-type reference-type
 first-form-that-looks-like interpret-modifiers modifiers-keywords partition-by-starts-with
 interpret-statement-do-while interpret-block interpret-statement-throw interpret-statement-for interpret-statement-foreach interpret-statement interpret-switch-entry-statement interpret-statement-if interpret-statement-while interpret-statement-switch interpret-statement-break interpret-statement-return statement-interpreters interpret-statement-continue
@@ -120,3 +120,23 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
 
 (defmacro class-decl [& args]
   (apply interpret-body-decl-class args))
+
+; by convention they are public vars beginning with cu-
+(defn compilation-units-in-namespace [a-namespace]
+  (filter
+    #(re-find #"^cu-" (.toString %))
+     (keys (ns-publics a-namespace))))
+
+(defn source-path-for-unit [cu]
+  (string/replace 
+    (.toString ( .getName (.getPackage cu)))
+    "." "/"))
+
+(defn java-file-name-for-unit [cu]
+  (.getName (first (.getTypes cu)))) ; FIXME this relies on there being only 1 type in the cu FIXME retarded will break
+
+(defn full-path-for-cu [cu]
+  (string/join [
+    (string/join "/" [ ( source-path-for-unit cu ) ( java-file-name-for-unit cu ) ])
+    ".java"
+  ]))
