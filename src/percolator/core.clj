@@ -7,6 +7,7 @@ is-class-modifier-option interpret-class-modifier-option interpret-body-decl-cto
 vomit-class-decl return-false add-two-to-s compilation-unit definterpreter interpreter reset-scope interpret-in-scope)
 
 (ns percolator.core
+  (:use [clojure.java.io :only (file writer)])
   (:require [clojure.string :as string ])
   (:import
     (japa.parser.ast.body AnnotationDeclaration 
@@ -135,8 +136,25 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
 (defn java-file-name-for-unit [cu]
   (.getName (first (.getTypes cu)))) ; FIXME this relies on there being only 1 type in the cu FIXME retarded will break
 
-(defn full-path-for-cu [cu]
+(defn relative-path-for-cu [cu]
   (string/join [
     (string/join "/" [ ( source-path-for-unit cu ) ( java-file-name-for-unit cu ) ])
     ".java"
   ]))
+
+(defn write-cu-to-path [cu path]
+  (let [ relative-path ( relative-path-for-cu cu )
+         full-path (string/join "/" [path relative-path] ) ]
+    ;(with-open [w (writer (file dir (str name ".clj")))]
+    (do
+      (with-open [w (writer (file full-path))]
+        (binding [*out* w]
+          (print (.toString cu))))
+      full-path)))
+
+
+; write .java files for all the percolator compilation units defined in cu-namespace
+(defn write-all-cus-to-path [cu-namespace path]
+  (map
+  #(write-cu-to-path @(ns-resolve cu-namespace % ) path)
+  (compilation-units-in-namespace cu-namespace)) )
