@@ -3,7 +3,7 @@
 primitive-type interpret-type reference-type
 first-form-that-looks-like interpret-modifiers modifiers-keywords partition-by-starts-with
 interpret-statement-do-while interpret-block interpret-statement-throw interpret-statement-for interpret-statement-foreach interpret-statement interpret-switch-entry-statement interpret-statement-if interpret-statement-while interpret-statement-switch interpret-statement-break interpret-statement-return statement-interpreters interpret-statement-continue
-is-class-modifier-option interpret-class-modifier-option interpret-body-decl-ctor body-decl-interpreters interpret-body-decl-method interpret-body-decl-class interpret-body-decl interpret-body-decl-field interpret-parameter snip-class-modifier-options-from-body-decls interpret-class-modifier-options
+is-class-modifier-option interpret-class-modifier-option interpret-body-decl-ctor body-decl-interpreters interpret-body-decl-method interpret-body-decl-class interpret-body-decl-interface interpret-body-decl interpret-body-decl-field interpret-parameter snip-class-modifier-options-from-body-decls interpret-class-modifier-options
 vomit-class-decl return-false add-two-to-s compilation-unit definterpreter interpreter reset-scope interpret-in-scope)
 
 (ns percolator.core
@@ -121,6 +121,9 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
 
 (defmacro class-decl [& args]
   (apply interpret-body-decl-class args))
+
+(defmacro interface-decl [& args]
+  (apply interpret-body-decl-interface args))
 
 ; by convention they are public vars beginning with cu-
 (defn compilation-units-in-namespace [a-namespace]

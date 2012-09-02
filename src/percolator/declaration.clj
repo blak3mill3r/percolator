@@ -21,14 +21,31 @@
       ...  `(doto ~param-construction (.setVarArgs true))
       nil  param-construction)))
 
+;(defn interpret-body-decl-method [modifiers return-type method-name param-list & body]
+;  (let [add-body-block-form (when body `( (.setBody ~(interpret-block body))))]
+;    `(doto
+;       (new MethodDeclaration
+;            ~(interpret-modifiers modifiers)
+;            ~(interpret-type return-type)
+;            ~(.toString method-name)
+;            [ ~@(map #(apply interpret-parameter %1) param-list) ] )
+;       ~@add-body-block-form)))
+
 (defn interpret-body-decl-method [modifiers return-type method-name param-list & body]
-  `(doto
-     (new MethodDeclaration
-          ~(interpret-modifiers modifiers)
-          ~(interpret-type return-type)
-          ~(.toString method-name)
-          [ ~@(map #(apply interpret-parameter %1) param-list) ] )
-     (.setBody ~(interpret-block body))))
+  (let [body-block (when body (interpret-block body))]
+    `(doto
+       (new MethodDeclaration
+         nil ; javadoc
+         ~(interpret-modifiers modifiers)
+         nil ; annotations
+         nil ; type parameters
+         ~(interpret-type return-type)
+         ~(.toString method-name)
+         [ ~@(map #(apply interpret-parameter %1) param-list) ]
+         0 ; array count
+         nil ; throws
+         ~body-block
+         ))))
 
 (defn interpret-body-decl-ctor [modifiers method-name param-list & body]
   `(doto
@@ -82,6 +99,22 @@
           ~(interpret-modifiers modifiers)
           nil ; annotations
           false ; isInterface
+          ~(.toString class-name)
+          nil ; list of TypeParameter
+          ~( when-not (empty? extends-list)    `[ ~@extends-list ])
+          ~( when-not (empty? implements-list) `[ ~@implements-list ])
+          [ ~@( map interpret-body-decl body-decls ) ] )))
+
+;FIXME NOTE exact dupe of above with true isInterface
+(defn interpret-body-decl-interface [modifiers class-name & body-decls]
+  (let [ { :keys [class-modifier-options body-decls]} (snip-class-modifier-options-from-body-decls body-decls)
+         { :keys [implements-list extends-list]} (interpret-class-modifier-options class-modifier-options)
+        ]
+    `( new ClassOrInterfaceDeclaration
+          nil ; javadoc
+          ~(interpret-modifiers modifiers)
+          nil ; annotations
+          true ; isInterface
           ~(.toString class-name)
           nil ; list of TypeParameter
           ~( when-not (empty? extends-list)    `[ ~@extends-list ])
