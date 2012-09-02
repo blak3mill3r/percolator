@@ -39,21 +39,20 @@
 
 (defn interpret-body-decl-method [modifiers-and-annotations return-type method-name param-list & body]
   (let [body-block (when body (interpret-block body))
-        modifiers-and-annotations (extract-modifiers-and-annotations modifiers-and-annotations)
-        ]
+        { :keys [modifiers annotations throws]} (extract-modifiers-and-annotations modifiers-and-annotations) ]
     `(doto
        (new MethodDeclaration
          nil ; javadoc
-         ~(:modifiers modifiers-and-annotations)
-         [ ~@(map #(apply interpret-annotation %1) (:annotations modifiers-and-annotations)) ]
+         ~modifiers
+         [ ~@(map #(apply interpret-annotation %1) annotations) ]
          nil ; type parameters
          ~(interpret-type return-type)
          ~(.toString method-name)
          [ ~@(map #(apply interpret-parameter %1) param-list) ]
          0 ; array count
-         nil ; throws
+         [~@throws]
          ~body-block
-         ))))
+         )) ))
 
 (defn interpret-body-decl-ctor [modifiers-and-annotations method-name param-list & body]
   (let [body-block (when body (interpret-block body))

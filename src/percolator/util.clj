@@ -28,6 +28,10 @@
    })
 
 ; modifiers and annotations conveniently share the same home in percolator code
+; FIXME rename this extract-modifiers-annotations-and-throws
+; or something
 (defn extract-modifiers-and-annotations [form]
   {:modifiers (reduce bit-or 0 (map modifiers-keywords ( filter #(keyword? %) form )))
-   :annotations (first (filter #(vector? %) form ) ) } )
+   :annotations (first (filter #(vector? %) form ) )
+   :throws ( map (fn [s] `(new NameExpr ~(.toString s))) (filter #(symbol? %) form))
+   } )
