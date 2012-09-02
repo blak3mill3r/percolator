@@ -50,7 +50,7 @@
          ~(.toString method-name)
          [ ~@(map #(apply interpret-parameter %1) param-list) ]
          0 ; array count
-         [~@throws]
+         ~throws
          ~body-block
          )) ))
 
