@@ -27,6 +27,7 @@
     :strictfp       ModifierSet/STRICTFP
    })
 
-(defn interpret-modifiers [form]
-  (reduce bit-or 0 (map modifiers-keywords form)))
-
+; modifiers and annotations conveniently share the same home in percolator code
+(defn extract-modifiers-and-annotations [form]
+  {:modifiers (reduce bit-or 0 (map modifiers-keywords ( filter #(keyword? %) form )))
+   :annotations (first (filter #(vector? %) form ) ) } )

@@ -52,36 +52,37 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
                                TypeDeclarationStmt                   ; done
                                WhileStmt                             ; done
                                )
-(japa.parser.ast.expr AnnotationExpr
-                               ArrayAccessExpr 
-                               ArrayCreationExpr 
-                               ArrayInitializerExpr 
+(japa.parser.ast.expr          AnnotationExpr
+                               MemberValuePair                  ; part of an annotation
+                               NormalAnnotationExpr             ; an annotation with name/value pairs
+                               MarkerAnnotationExpr             ; an annotation with values
+                               SingleMemberAnnotationExpr       ; an an annotation with 1 'value' value
+                               ArrayAccessExpr                  ; an expression accessing an element of an array
+                               ArrayCreationExpr                ; ? is this new[] ?
+                               ArrayInitializerExpr             ; ? TODO look into this
                                AssignExpr                       ; done
                                AssignExpr$Operator              ; done
                                BinaryExpr                       ; done
                                BinaryExpr$Operator              ; done
                                BooleanLiteralExpr               ; done
-                               CastExpr 
+                               CastExpr                         ; TODO explicit casts
                                CharLiteralExpr                  ; done
                                ClassExpr                        ; done
                                ConditionalExpr                  ; aka ternary TODO do if statement first
                                DoubleLiteralExpr                ; done
                                EnclosedExpr                     ; wtf
                                FieldAccessExpr                  ; done-ish with special /-in-a-symbol syntax (only possible if target is a NameExpr)
-                               InstanceOfExpr 
+                               InstanceOfExpr                   ; TODO easy
                                IntegerLiteralExpr               ; not possible everything is a long, no biggie
                                IntegerLiteralMinValueExpr       ; wtf
                                LiteralExpr                      ; abstract
                                LongLiteralExpr                  ; done-ish ... better type inference from clojure primitives
                                LongLiteralMinValueExpr          ; wtf
-                               MarkerAnnotationExpr 
                                MethodCallExpr                   ; done (anything missing?)
                                NameExpr                         ; done
-                               NormalAnnotationExpr             ; wtf
                                NullLiteralExpr                  ; done
                                ObjectCreationExpr               ; done-ish, doesn't support outer/inner classes
                                QualifiedNameExpr                ; done-ish with the /-in-a-symbol syntax
-                               SingleMemberAnnotationExpr 
                                StringLiteralExpr                ; done
                                SuperExpr                        ; done
                                ThisExpr                         ; done

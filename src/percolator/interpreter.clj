@@ -74,11 +74,13 @@
 
 (defn interpret-in-scope [scope form]
   (let [ interpreter            (interpreter-for-scope-and-form scope form)
-         interpreter-arguments  (if (seq? form) (drop 1 form) [form]) ]
+         interpreter-arguments  (if (seq? form) (drop 1 form) [form])
+         looks-percolatorish    (and (seq? form) (seq? (first form) ) (= 'quote (first (first form) )) ) ]  ; if no interpreter is found this is used to know whether to error out or eval the form
     (if interpreter
       ( let [ interpreter-result ( apply interpreter interpreter-arguments) ]
         ( if (interpreter-for-scope-and-form scope interpreter-result)
           (recur scope interpreter-result) interpreter-result ))
-      ( let [ eval-result (eval form) ]
+      (if looks-percolatorish (println "PROBLEM interpreting, in scope (" scope ") this form:\n" form)
+        ( let [ eval-result (eval form) ]
         ( if (interpreter-for-scope-and-form scope eval-result)
-          (recur scope eval-result) eval-result )))))
+          (recur scope eval-result) eval-result ))))))

@@ -135,11 +135,13 @@
      ~(if (first initializer) (interpret-expression (first initializer)))
       ))
 
-(defn interpret-expression-variable-declaration [modifiers java-type & declarators]
-  `(new VariableDeclarationExpr
-        ~(interpret-modifiers modifiers)
+; FIXME support annotations? javadoc?
+(defn interpret-expression-variable-declaration [modifiers-and-annotations java-type & declarators]
+  (let [ { :keys [modifiers annotations]} (extract-modifiers-and-annotations modifiers-and-annotations )  ]
+    `(new VariableDeclarationExpr
+        ~modifiers
         ~(interpret-type java-type)
-        [ ~@(map #(apply interpret-declarator %1) declarators) ] ))
+        [ ~@(map #(apply interpret-declarator %1) declarators) ] ) ))
 
 (defn interpret-expression-class [java-type]
   `(new ClassExpr ~(interpret-type java-type)))
