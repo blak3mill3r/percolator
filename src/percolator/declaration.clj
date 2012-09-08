@@ -55,7 +55,10 @@
          )) ))
 
 (defn interpret-body-decl-ctor [modifiers-and-annotations method-name param-list & body]
-  (let [body-block (when body (interpret-block body))
+  (let [ empty-body? (= (.toString (last (first body) ) ) "empty")
+         body-block (when-not empty-body?
+                      (when body
+                        (interpret-block body)))
         { :keys [modifiers annotations throws]} (extract-modifiers-and-annotations modifiers-and-annotations) ]
     `(doto
        (new ConstructorDeclaration
@@ -66,8 +69,7 @@
          ~(.toString method-name)
          [ ~@(map #(apply interpret-parameter %1) param-list) ]
          ~throws
-         ~body-block
-         )) ))
+         ~(or body-block (interpret-block []))))))
 
 ;FIXME add support for annotations javadoc etc
 (defn interpret-body-decl-field [modifiers-and-annotations java-type & declarators]
