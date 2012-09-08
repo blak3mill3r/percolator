@@ -87,6 +87,7 @@
     'class    interpret-statement-decl-class
     ; just a code block ... (aka anonymous scope)
     'block    interpret-statement-block
+    'empty    (interpreter [] `(new EmptyStmt))
    })
 
 ; statement inherits expression

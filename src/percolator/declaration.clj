@@ -56,18 +56,18 @@
 
 (defn interpret-body-decl-ctor [modifiers-and-annotations method-name param-list & body]
   (let [body-block (when body (interpret-block body))
-        { :keys [modifiers annotations]} (extract-modifiers-and-annotations modifiers-and-annotations) ]
+        { :keys [modifiers annotations throws]} (extract-modifiers-and-annotations modifiers-and-annotations) ]
     `(doto
-       (new MethodDeclaration
-         nil ; javadoc
+       (new ConstructorDeclaration
+         nil ;(new JavadocComment "FUCK THIS METHOD") 
          ~modifiers
-         [ ~@(map #(apply interpret-annotation %1) (:annotations modifiers-and-annotations)) ]
+         [ ~@(map #(apply interpret-annotation %1) annotations) ]
          nil ; type parameters
          ~(.toString method-name)
          [ ~@(map #(apply interpret-parameter %1) param-list) ]
-         nil ; throws
+         ~throws
          ~body-block
-         ))))
+         )) ))
 
 ;FIXME add support for annotations javadoc etc
 (defn interpret-body-decl-field [modifiers-and-annotations java-type & declarators]

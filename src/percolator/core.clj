@@ -38,7 +38,7 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
                                BreakStmt                             ; done, doesn't support identifying them uniquely which I think is only useful if you're using javaparser for modifying existing ASTs
                                ContinueStmt                          ; done, ditto unique identification
                                DoStmt                                ; done
-                               EmptyStmt                             ; maybe not needed?
+                               EmptyStmt                             ; used now for forcing an empty method body (otherwise would be a method declaration)
                                ExplicitConstructorInvocationStmt     ; TODO might kinda require class & method declarations 
                                ExpressionStmt                        ; done
                                ForeachStmt                           ; done
