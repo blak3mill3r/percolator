@@ -123,7 +123,7 @@
                     field-name        (last java-type-and-field-name)
                     javascript-body   (apply str "return this." (.toString field-name ) ";" )
                     method-name       (apply str "js" (.toString field-name )) ]
-               `( 'gwt-native-method #{:private :final :native} ~java-type ~method-name [] ~javascript-body )))
+               `( 'gwt-native-method #{:public :final :native} ~java-type ~method-name [] ~javascript-body )))
          extend-jso [ ( (interpreter [] '('extends JavaScriptObject)) ) ]
          nullary-ctor [ ( (interpreter [] '('ctor #{:protected} StockData [] 'empty ) ) )  ]
          jsni-wrapper-method-decls ( map jsni-wrapper-decl java-type-json-field-name-pairs )
@@ -166,11 +166,11 @@
 
     com.whatsys.client.StockData
 
-    com.google.gwt.http.client.Request;
-    com.google.gwt.http.client.RequestBuilder;
-    com.google.gwt.http.client.RequestCallback;
-    com.google.gwt.http.client.RequestException;
-    com.google.gwt.http.client.Response;
+    com.google.gwt.http.client.Request
+    com.google.gwt.http.client.RequestBuilder
+    com.google.gwt.http.client.RequestCallback
+    com.google.gwt.http.client.RequestException
+    com.google.gwt.http.client.Response
    ]
 
   ; declare a public class Play
@@ -274,17 +274,35 @@
 
         ( 'method #{:public} void doSomeCrazyShit [] 
           ( 'local #{} RequestBuilder (builder ('new RequestBuilder RequestBuilder/GET JSON_URL)) )
+
+          ( 'try (
+
           ( 'local #{} Request (request ('. builder sendRequest null
                                            ('new RequestCallback
-                                              ('method #{:public} void onError [(Request request) (Throwable e)] ('empty) )
+                                              ('method #{:public} void onError [(Request request) (Throwable e)] 'empty )
                                               ('method #{:public} void onResponseReceived [(Request request) (Response response)]
                                                  ('if
                                                     ('== 200 ('. response getStatusCode ))
-                                                    (('log ('. response getText)))
-                                                    (('log "MEGAFAIL"))))))))
+                                                    (
+                                                     ( 'local #{} String ( responseText ('. response getText) ))
+                                                     ( 'log responseText )
+                                                     ( 'local #{} JsArray<StockData> (calamity ('. nil asArrayOfStockData responseText )))
+                                                     ( 'log
+                                                         ('.
+                                                            ('. calamity get 0 )
+                                                            jssymbol
+                                                            )
+                                                         )
+                                                     
+                                                     )
+                                                    (('log "MEGAFAIL")))))))))
+              ((RequestException e)
+                 ('log "MEGAFAIL2")
+                 )
+          ))
 
-          )
 
+    ;private final native JsArray<StockData> asArrayOfStockData(String json) /*-{return eval(json);}-*/;
         ; okay, moment of truth, the user has pressed and released the <Enter> key
         ( 'method #{:public} void sendNameToServer []
           ( 'set-text errorLabel "" )

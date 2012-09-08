@@ -82,20 +82,27 @@ public class Play implements EntryPoint {
 
             public void doSomeCrazyShit() {
                 RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, JSON_URL);
-                Request request = builder.sendRequest(null, new RequestCallback() {
+                try {
+                    Request request = builder.sendRequest(null, new RequestCallback() {
 
-                    public void onError(Request request, Throwable e) {
-                        ;
-                    }
-
-                    public void onResponseReceived(Request request, Response response) {
-                        if (200 == response.getStatusCode()) {
-                            GWT.log(response.getText());
-                        } else {
-                            GWT.log("MEGAFAIL");
+                        public void onError(Request request, Throwable e) {
                         }
-                    }
-                });
+
+                        public void onResponseReceived(Request request, Response response) {
+                            if (200 == response.getStatusCode()) {
+                                String responseText = response.getText();
+                                GWT.log(responseText);
+                                JsArray<StockData> calamity = asArrayOfStockData(responseText);
+                                GWT.log(calamity.get(0).jssymbol());
+                            } else {
+                                GWT.log("MEGAFAIL");
+                            }
+                        }
+                    });
+                } catch (RequestException e) {
+                    GWT.log("MEGAFAIL2");
+                } finally {
+                }
             }
 
             public void sendNameToServer() {
