@@ -5,7 +5,6 @@ import com.google.gwt.core.client.JavaScriptObject;
 class StockData extends JavaScriptObject {
 
     protected StockData() {
-        ;
     }
     private final native String jssymbol() /*-{return this.symbol;}-*/;
     private final native double jsprice() /*-{return this.price;}-*/;

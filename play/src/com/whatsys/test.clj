@@ -125,7 +125,7 @@
                     method-name       (apply str "js" (.toString field-name )) ]
                `( 'gwt-native-method #{:private :final :native} ~java-type ~method-name [] ~javascript-body )))
          extend-jso [ ( (interpreter [] '('extends JavaScriptObject)) ) ]
-         nullary-ctor [ ( (interpreter [] '('ctor #{:protected} StockData [] ('empty)) ) )  ]
+         nullary-ctor [ ( (interpreter [] '('ctor #{:protected} StockData [] 'empty ) ) )  ]
          jsni-wrapper-method-decls ( map jsni-wrapper-decl java-type-json-field-name-pairs )
         ]
     `(compilation-unit 
@@ -139,7 +139,6 @@
   [[ String symbol ] [ double price ] [ double change ]]
   ('method #{:public :final} double getChangeRatio []
     ('return ('/ ('. this jschange ) ('. this jsprice)))))
-
 
 (compilation-unit
   ; metadata
@@ -260,7 +259,8 @@
         ( 'implements ClickHandler KeyUpHandler )
 
         ( 'on-click
-            ( '. this sendNameToServer )
+            ;( '. this sendNameToServer )
+            ( '. this doSomeCrazyShit)
             ( 'log "My balls are on fire" )
             )
 
@@ -271,6 +271,19 @@
                   ( '. e getNativeKeyCode )
                   KeyCodes/KEY_ENTER )
             (('. this sendNameToServer ))))
+
+        ( 'method #{:public} void doSomeCrazyShit [] 
+          ( 'local #{} RequestBuilder (builder ('new RequestBuilder RequestBuilder/GET JSON_URL)) )
+          ( 'local #{} Request (request ('. builder sendRequest null
+                                           ('new RequestCallback
+                                              ('method #{:public} void onError [(Request request) (Throwable e)] ('empty) )
+                                              ('method #{:public} void onResponseReceived [(Request request) (Response response)]
+                                                 ('if
+                                                    ('== 200 ('. response getStatusCode ))
+                                                    (('log ('. response getText)))
+                                                    (('log "MEGAFAIL"))))))))
+
+          )
 
         ; okay, moment of truth, the user has pressed and released the <Enter> key
         ( 'method #{:public} void sendNameToServer []

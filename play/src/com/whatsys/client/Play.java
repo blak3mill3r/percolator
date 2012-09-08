@@ -70,7 +70,7 @@ public class Play implements EntryPoint {
         class MyHandler implements ClickHandler, KeyUpHandler {
 
             public void onClick(ClickEvent e) {
-                this.sendNameToServer();
+                this.doSomeCrazyShit();
                 GWT.log("My balls are on fire");
             }
 
@@ -78,6 +78,24 @@ public class Play implements EntryPoint {
                 if (e.getNativeKeyCode() == KeyCodes.KEY_ENTER) {
                     this.sendNameToServer();
                 }
+            }
+
+            public void doSomeCrazyShit() {
+                RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, JSON_URL);
+                Request request = builder.sendRequest(null, new RequestCallback() {
+
+                    public void onError(Request request, Throwable e) {
+                        ;
+                    }
+
+                    public void onResponseReceived(Request request, Response response) {
+                        if (200 == response.getStatusCode()) {
+                            GWT.log(response.getText());
+                        } else {
+                            GWT.log("MEGAFAIL");
+                        }
+                    }
+                });
             }
 
             public void sendNameToServer() {
