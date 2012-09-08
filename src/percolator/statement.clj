@@ -70,6 +70,21 @@
 
 (defn interpret-statement-block [& s] (interpret-block s))
 
+(defn interpret-catch-clause [cl]
+  (let [ parameter (first cl)
+       catch-block (rest cl) ]
+  `(new CatchClause
+      ~(apply interpret-parameter parameter)
+      ~(interpret-block catch-block))))
+
+(defn interpret-statement-try [try-block & clauses ]
+  (let [ is-finally? (fn [cl] (= (first cl) '(quote finally) ))
+         catch-clauses (remove is-finally? clauses)
+         finally-block (drop 1 (first (filter is-finally? clauses))) ]
+    `(new TryStmt
+          ~(interpret-block try-block)
+          [ ~@( map interpret-catch-clause catch-clauses ) ]
+          ~(interpret-block finally-block))))
 
 (add-interpreters-to-scope
   :statement
@@ -88,6 +103,7 @@
     ; just a code block ... (aka anonymous scope)
     'block    interpret-statement-block
     'empty    (interpreter [] `(new EmptyStmt))
+    'try      interpret-statement-try
    })
 
 ; statement inherits expression
@@ -95,3 +111,23 @@
 ; by wrapping it in `(new ExpressionStmt ~expr)
 ; this is cool...
 (inherit-scope :statement :expression (fn [expr] `(new ExpressionStmt ~expr)))
+
+;(.toString (eval (apply interpret-statement '(
+;
+;                             ( 'return 3 )
+;                             )) ))
+(doseq [x (map #(.toString (eval %)) (map interpret-statement '(
+
+                             ( 'return 3 )
+
+'('if ('. dung heaping  ) (('return 1))  )
+'('try (
+   ('. dung poop))
+   ((RequestException e)
+      ('. GWT log "Nutsack!")
+      )
+   ('finally
+      ('. Someshit freeMemory)))
+
+                             )))] ( println x ))
+

@@ -50,7 +50,8 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
                                SwitchStmt                            ; done
                                SynchronizedStmt                      ; NOTYET
                                ThrowStmt                             ; done
-                               TryStmt                               ; NOTYET
+                               TryStmt                               ; done
+                               CatchClause                           ; done
                                TypeDeclarationStmt                   ; done
                                WhileStmt                             ; done
                                )
@@ -100,7 +101,7 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
                        VoidType              ; dude is going to build void rays
                        WildcardType )))
 
-(load "extension" "interpreter" "util" "expression" "declaration" "japaparser" "statement" "type")
+(load "extension" "interpreter" "util" "type"  "expression" "declaration" "japaparser" "statement" )
 
 ; a mapping of package/class names to clojure vars by a convention
 ; which is used by percolator to identify compilation units in a namespace
