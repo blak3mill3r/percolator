@@ -1,39 +1,11 @@
-there's a difference between field-access and method-call which the programmer must express
-that expression is a NameExpr("System"), a FieldAccessExpr("out"), and a MethodCallExpr("println")
-
-(println
-  (spit-it-out
-    '(. (System/out) (println "foo"))
-    ))
-
-(. (System/out) (println "foo"))
-a call to the function println on the target System/out
-where System/out is a FieldAccessExpr
-
-
-so first convert all symbols
-if it has a / in it it is a FieldAccessExpr on a NameExpr
-
-
-map over the elements of the input list (looks kinda like java-interop clojure code but is actually a java-source template)
-calling a multimethod
-if the thing is a symbol determine what sort of java code element it represents
-if it's a list evaluate it recursively?
-
-
-
-
-
-
-
+one problem that should be fixed:
+  percolator source error
+  it still tries to build CU with javaparser
 
 ----- cool idea, eventually?
 seems like it might be possible to use a kind of "reflection" ... loading the
 java classes which are being used in the generated code into the clojure vm
 so it can guess what a symbol represents, making verbosity less necessary
-
-
-
 
 PLAY
 
