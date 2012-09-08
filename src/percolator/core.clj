@@ -39,7 +39,7 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
                                ContinueStmt                          ; done, ditto unique identification
                                DoStmt                                ; done
                                EmptyStmt                             ; used now for forcing an empty method body (otherwise would be a method declaration)
-                               ExplicitConstructorInvocationStmt     ; TODO might kinda require class & method declarations 
+                               ExplicitConstructorInvocationStmt     ; TODO this is super with arguments
                                ExpressionStmt                        ; done
                                ForeachStmt                           ; done
                                ForStmt                               ; done-ish doesn't support multiple expressions in initializer or updater

@@ -38,7 +38,10 @@
          `(new MarkerAnnotationExpr ~name-expr )))))
 
 (defn interpret-body-decl-method [modifiers-and-annotations return-type method-name param-list & body]
-  (let [body-block (when body (interpret-block body))
+  (let [ empty-body? (= (.toString (last (first body) ) ) "empty")
+         body-block (when-not empty-body?
+                      (when body
+                        (interpret-block body)))
         { :keys [modifiers annotations throws]} (extract-modifiers-and-annotations modifiers-and-annotations) ]
     `(doto
        (new MethodDeclaration
@@ -51,7 +54,7 @@
          [ ~@(map #(apply interpret-parameter %1) param-list) ]
          0 ; array count
          ~throws
-         ~body-block
+         ~(or body-block (interpret-block []))
          )) ))
 
 (defn interpret-body-decl-ctor [modifiers-and-annotations method-name param-list & body]
