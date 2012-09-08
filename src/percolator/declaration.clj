@@ -58,7 +58,9 @@
          )) ))
 
 (defn interpret-body-decl-ctor [modifiers-and-annotations method-name param-list & body]
-  (let [ empty-body? (= (.toString (last (first body) ) ) "empty")
+  (let [ empty-body? (and body
+                          (seq? body)
+                          (= (.toString (last (first body) ) ) "empty"))
          body-block (when-not empty-body?
                       (when body
                         (interpret-block body)))
