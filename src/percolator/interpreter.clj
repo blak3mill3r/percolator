@@ -72,6 +72,8 @@
         (if inherited
           (fn [& args] (wrapper (apply inherited args))))))))
 
+(def ^:dynamic *perc-scope-args* {})
+
 (defn interpret-in-scope [scope form]
   (let [ interpreter            (interpreter-for-scope-and-form scope form)
          interpreter-arguments  (if (seq? form) (drop 1 form) [form])

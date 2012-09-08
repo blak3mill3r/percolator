@@ -164,12 +164,10 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
              postprocessor (or (first postprocessors) identity) ; FIXME limited to 1 postprocessor
              java-source-string ( postprocessor (.toString ast)  )
             ]
-        (do
-          (println "writing," relative-path  "metadata is " metadata " and postprocessors " postprocessors " the postprocessor is  " postprocessor)
           (with-open [w (writer (file full-path))]
             (binding [*out* w]
               (print java-source-string ))
-            full-path)))))) ; return the path I guess, instead of the result of print?
+            full-path))))) ; return the path I guess, instead of the result of print?
 
 ; write .java files for all the percolator compilation units defined in cu-namespace
 (defn write-all-cus-to-path [cu-namespace path]
