@@ -12,6 +12,7 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
   (:import
     (japa.parser.ast.body AnnotationDeclaration 
                           AnnotationMemberDeclaration 
+                          JavadocComment
                           ClassOrInterfaceDeclaration 
                           ConstructorDeclaration 
                           EmptyMemberDeclaration 
@@ -28,7 +29,8 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
                           VariableDeclaratorId
                           )
 (japa.parser ASTHelper)
-(japa.parser.ast CompilationUnit
+(japa.parser.ast BlockComment
+                 CompilationUnit
                  PackageDeclaration
                  ImportDeclaration)
 (japa.parser.ast.stmt AssertStmt                            ; NOTYET
@@ -102,23 +104,27 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
 
 ; a mapping of package/class names to clojure vars by a convention
 ; which is used by percolator to identify compilation units in a namespace
-(defn cu-auto-name [package-name class-name]
-  (string/replace (string/join (map #(.toString %) ["cu-" package-name "--" class-name]))
+(defn cu-auto-name [package-name class-name & suffix]
+    (string/replace (string/join (map #(.toString %) ["cu-" package-name "--" class-name (string/join suffix)]))
                   #"\."
                   "-"))
 
 ; the class name is the third form in the class-decl form
 (defn class-name-of [form] (nth form 2))
 
-(defmacro compilation-unit [package-decl import-decls class-decl]
-  (let [ var-name (symbol (cu-auto-name package-decl (class-name-of class-decl))) ]
+(defmacro compilation-unit [metadata package-decl import-decls class-decl]
+  (let [ var-name          (symbol (cu-auto-name package-decl (class-name-of class-decl))) ]
    `(def ~var-name
-      (new CompilationUnit
-       ~(interpret-package-declaration package-decl)
-        [~@(map interpret-import-decl import-decls)]
-        [~class-decl]
-        [] ;comments FIXME add support
-        ))))
+      { :ast 
+        (new CompilationUnit
+         ~(interpret-package-declaration package-decl)
+          [~@(map interpret-import-decl import-decls)]
+          [~class-decl]
+          [] ;comments FIXME add support
+          )
+        :metadata ~metadata
+       })))
+
 
 (defmacro class-decl [& args]
   (apply interpret-body-decl-class args))
@@ -146,14 +152,23 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
     ".java"
   ]))
 
+
+
 ; write a single percolator cu to the given path
 (defn write-cu-to-path [cu path]
-  (let [ relative-path ( relative-path-for-cu cu )
-         full-path (string/join "/" [path relative-path] ) ]
-    (with-open [w (writer (file full-path))]
-      (binding [*out* w]
-        (print (.toString cu)))
-    full-path)))
+  (let [{:keys [ast metadata]} cu]
+    (let [{:keys [postprocessors] :or []} metadata ]
+      (let [ relative-path ( relative-path-for-cu ast )
+             full-path (string/join "/" [path relative-path] )
+             postprocessor (or (first postprocessors) identity) ; FIXME limited to 1 postprocessor
+             java-source-string ( postprocessor (.toString ast)  )
+            ]
+        (do
+          (println "writing," relative-path  "metadata is " metadata " and postprocessors " postprocessors " the postprocessor is  " postprocessor)
+          (with-open [w (writer (file full-path))]
+            (binding [*out* w]
+              (print java-source-string ))
+            full-path)))))) ; return the path I guess, instead of the result of print?
 
 ; write .java files for all the percolator compilation units defined in cu-namespace
 (defn write-all-cus-to-path [cu-namespace path]

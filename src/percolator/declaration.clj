@@ -42,7 +42,7 @@
         { :keys [modifiers annotations throws]} (extract-modifiers-and-annotations modifiers-and-annotations) ]
     `(doto
        (new MethodDeclaration
-         nil ; javadoc
+         nil ;(new JavadocComment "FUCK THIS METHOD") 
          ~modifiers
          [ ~@(map #(apply interpret-annotation %1) annotations) ]
          nil ; type parameters
