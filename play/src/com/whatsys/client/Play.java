@@ -1,6 +1,7 @@
 package com.whatsys.client;
 
 import com.whatsys.shared.FieldVerifier;
+import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -16,12 +17,21 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.whatsys.client.StockData;
+import com.google.gwt.http.client.Request;
+import com.google.gwt.http.client.RequestBuilder;
+import com.google.gwt.http.client.RequestCallback;
+import com.google.gwt.http.client.RequestException;
+import com.google.gwt.http.client.Response;
 
 public class Play implements EntryPoint {
 
     private static final String SERVER_ERROR = "D'oh!";
 
+    private static final String JSON_URL = "http://127.0.0.1:8888/jsontest.json";
+
     private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
+    private final native JsArray<StockData> asArrayOfStockData(String json) /*-{return eval(json);}-*/;
 
     public void onModuleLoad() {
         final Button sendButton = new Button("Send");
@@ -61,7 +71,7 @@ public class Play implements EntryPoint {
 
             public void onClick(ClickEvent e) {
                 this.sendNameToServer();
-                GWT.log("My balls are on firey fire");
+                GWT.log("My balls are on fire");
             }
 
             public void onKeyUp(KeyUpEvent e) {
@@ -74,7 +84,7 @@ public class Play implements EntryPoint {
                 errorLabel.setText("");
                 String textToServer = nameField.getText();
                 if (!FieldVerifier.isValidName(textToServer)) {
-                    errorLabel.setText("I'm afraid I can't let you do that, Dave...");
+                    errorLabel.setText("I'm afraid I can't let you do that, Bingus...");
                     return;
                 }
                 textToServerLabel.setText(textToServer);
@@ -93,6 +103,7 @@ public class Play implements EntryPoint {
 
                     public void onFailure(java.lang.Throwable e) {
                         dialogBox.setText("something is wrong :(");
+                        GWT.log(e.toString());
                         serverResponseLabel.addStyleName("serverResponseLabelError");
                         {
                             serverResponseLabel.setHTML(SERVER_ERROR);

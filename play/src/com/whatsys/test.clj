@@ -1,5 +1,46 @@
 (ns com.whatsys.test
+  ( :require [clojure.string :as string] )
   ( :use     [percolator.core]))
+
+
+; in this case /body/ should be a string of javascript
+(defn interpret-gwt-native-method [modifiers-and-annotations return-type method-name param-list body ]
+  ( interpret-body-decl-method modifiers-and-annotations return-type method-name param-list body))
+
+;(defn interpret-gwt-panel [name form]
+;  (do (println name)
+;  (println form) 
+;  (binding [perc-zarg name]
+;    ( interpret-in-scope :gwt-panel form ) ) )) 
+
+;(add-interpreters-to-scope :gwt-panel
+;  { 'nuts (interpreter [n f] `('. nuts smash))
+;    'log  (interpreter [n] `( '. GWT log n ))
+;   java.lang.String (fn [n s] s) })
+
+;(apply interpret-gwt-panel  '(
+;  Foo
+;  ('nuts "3")
+;;  "FoosBalls"
+;                              ) )
+;(add-interpreters-to-scope :statement
+;  { 'panelfy (interpreter [name & f] (map #(interpret-gwt-panel name % ) f))})
+
+;(map (fn [form] (interpret-in-scope :statement form)) '(
+;  ('. foo bar)
+;  ('panelfy Foo )
+; ;   :.fooStyleName             ; symbol starting with . css style name
+;;    "FoosBalls"
+;
+;;     )
+;  ))
+;
+
+; do this at some point....
+;(def jt-async-callback-for-parameters [parameters]
+;  )
+     ;('new ~(jt-async-callback-for-parameters parameter-list) 
+;AsyncCallback<String>
 
 (definterpreter async-rpc [service parameter-list success failure]
   `( '. greetingService greetServer textToServer
@@ -15,6 +56,8 @@
 (add-interpreters-to-scope :gwt-body-decl
   { 'on-click   (interpreter [& statements] `( 'method #{:public} void onClick [ (ClickEvent e) ] ~@statements ))
     'on-key-up  (interpreter [& statements] `( 'method #{:public} void onKeyUp [ (KeyUpEvent e) ] ~@statements ))
+    'gwt-native-method  interpret-gwt-native-method
+    'sucknuts  interpret-body-decl-method
    })
 
 (add-interpreters-to-scope :gwt-statement
@@ -64,11 +107,48 @@
   { 'show-dialog show-dialog
    })
 
+; japaparser outputs native methods as methods with a single expression
+; statement in the body, which is a literal string expression of
+; the string we want to become the native javascript body
+; this regular expression replacement converts it to GWT JSNI syntax
+; for obvious reasons this cannot be used in conjunction with other native
+; methods, since it uses the word 'native' to match the method definitions
+(defn hack-for-gwt-native-methods [java-code]
+  (.replaceAll java-code "\n(.*native.*)\\{[.\\s]*\\\"(.*)\\\"\\;\\s*\\}" "$1/*-{$2}-*/;"))
+
+(defmacro jsni-proxy [package-name class-name java-type-json-field-name-pairs & user-body-decls]
+  (let [ jsni-wrapper-decl ; a function to make the method definition from the list of java-type/field-name pairs
+           (interpreter [java-type-and-field-name]
+             (let [ java-type         (first java-type-and-field-name)
+                    field-name        (last java-type-and-field-name)
+                    javascript-body   (apply str "return this." (.toString field-name ) ";" )
+                    method-name       (apply str "js" (.toString field-name )) ]
+               `( 'gwt-native-method #{:private :final :native} ~java-type ~method-name [] ~javascript-body )))
+         extend-jso [ ( (interpreter [] '('extends JavaScriptObject)) ) ]
+         nullary-ctor [ ( (interpreter [] '('ctor #{:protected} StockData [] ('empty)) ) )  ]
+         jsni-wrapper-method-decls ( map jsni-wrapper-decl java-type-json-field-name-pairs )
+        ]
+    `(compilation-unit 
+       { :postprocessors [ hack-for-gwt-native-methods ] }
+       ~package-name
+       [ com.google.gwt.core.client.JavaScriptObject ]
+       (class-decl #{} ~class-name ~@( concat extend-jso nullary-ctor jsni-wrapper-method-decls user-body-decls )))))
+
+(jsni-proxy
+  com.whatsys.client StockData
+  [[ String symbol ] [ double price ] [ double change ]]
+  ('method #{:public :final} double getChangeRatio []
+    ('return ('/ ('. this jschange ) ('. this jsprice)))))
+
+
 (compilation-unit
+  ; metadata
+  { :postprocessors [ hack-for-gwt-native-methods ] }
   ; package name
   com.whatsys.client
   ; imports
   [ com.whatsys.shared.FieldVerifier
+    com.google.gwt.core.client.JsArray
     com.google.gwt.core.client.EntryPoint
     com.google.gwt.core.client.GWT
     com.google.gwt.event.dom.client.ClickEvent
@@ -83,19 +163,34 @@
     com.google.gwt.user.client.ui.Label
     com.google.gwt.user.client.ui.RootPanel
     com.google.gwt.user.client.ui.TextBox
-    com.google.gwt.user.client.ui.VerticalPanel ]
+    com.google.gwt.user.client.ui.VerticalPanel
+
+    com.whatsys.client.StockData
+
+    com.google.gwt.http.client.Request;
+    com.google.gwt.http.client.RequestBuilder;
+    com.google.gwt.http.client.RequestCallback;
+    com.google.gwt.http.client.RequestException;
+    com.google.gwt.http.client.Response;
+   ]
 
   ; declare a public class Play
   (class-decl #{:public} Play
 
+
     ; which implements the EntryPoint interface
-    ( 'implements EntryPoint )
+   ( 'implements EntryPoint )
 
     ; declare a static String field called SERVER_ERROR and initialize it
     ( 'field #{:private :static :final} String (SERVER_ERROR "D'oh!") )
+    ( 'field #{:private :static :final} String (JSON_URL "http://127.0.0.1:8888/jsontest.json") )
 
     ; declare a member field of type GreetingServiceAsync and initialize it
     ( 'field #{:private :final} GreetingServiceAsync ( greetingService ('gwt-new GreetingService) ) )
+
+    ( 'gwt-native-method #{:private :final :native} JsArray<StockData> asArrayOfStockData [( String json )]
+        "return eval(json);"
+        )
 
     ; define a public, nullary method called onModuleLoad, returning void
     ( 'method #{:public} void onModuleLoad []
@@ -186,7 +281,7 @@
 
           ; if it ain't right, complain and quit...
           ( 'if ('! ('. FieldVerifier isValidName textToServer))
-              ( ('. errorLabel setText "I'm afraid I can't let you do that, Dave...")
+              ( ('. errorLabel setText "I'm afraid I can't let you do that, Bingus...")
                 ( 'return )))
 
           ( 'set-text textToServerLabel textToServer )
@@ -200,6 +295,7 @@
              ( 'show-dialog result ))
             ; typical howling emptiness or bitter defeat...
             (( 'set-text dialogBox "something is wrong :(" )
+             ( 'log ('. e toString ) )
              ( 'style serverResponseLabel "serverResponseLabelError" )
              ( 'show-dialog SERVER_ERROR )))
              )
@@ -211,3 +307,4 @@
       ( '. nameField addKeyUpHandler handler )
 
   )))
+

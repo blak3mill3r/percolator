@@ -9,6 +9,7 @@
                      [org.clojars.ibdknox/lein-nailgun "1.1.1" ]
                      [vimclojure/server                "2.3.5" ]
                      [lein-gwt                         "0.1.1" ]
+                     [lein-percolator                  "0.0.1-SNAPSHOT" ]
                      [com.google.gwt/gwt-user          "2.4.0" ]
                      [com.google.gwt/gwt-dev           "2.4.0" ]
                      ]
@@ -17,6 +18,9 @@
                 :war "war"
                 :logdir "log"
                 :logLevel INFO
+                :strict ""
                 }
   :gwt-options-devmode {}
+  :percolator-options {}
+  :percolator-namespaces [com.whatsys.test com.whatsys.tawrongle]
             )
