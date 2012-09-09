@@ -17,7 +17,7 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.whatsys.client.StockData;
+import com.whatsys.client.StMessage;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -28,16 +28,16 @@ public class Play implements EntryPoint {
 
     private static final String SERVER_ERROR = "D'oh!";
 
-    private static final String JSON_URL = "http://127.0.0.1:8888/jsontest.json";
+    private static final String JSON_URL = "http://127.0.0.1:8888/ststream.json";
 
     private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
-    private final native JsArray<StockData> asArrayOfStockData(String json) /*-{return eval(json);}-*/;
+    private final native JsArray<StMessage> getMessages(String json) /*-{return eval("(" +json + ")").messages;}-*/;
 
     public void onModuleLoad() {
         final Button sendButton = new Button("Send");
         final TextBox nameField = new TextBox();
-        nameField.setText("GWT User");
         final Label errorLabel = new Label();
+        nameField.setText("GWT User");
         sendButton.addStyleName("sendButton");
         RootPanel.get("nameFieldContainer").add(nameField);
         RootPanel.get("sendButtonContainer").add(sendButton);
@@ -77,31 +77,6 @@ public class Play implements EntryPoint {
             public void onKeyUp(KeyUpEvent e) {
                 if (e.getNativeKeyCode() == KeyCodes.KEY_ENTER) {
                     this.sendNameToServer();
-                }
-            }
-
-            public void doSomeCrazyShit() {
-                RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, JSON_URL);
-                try {
-                    Request request = builder.sendRequest(null, new RequestCallback() {
-
-                        public void onError(Request request, Throwable e) {
-                        }
-
-                        public void onResponseReceived(Request request, Response response) {
-                            if (200 == response.getStatusCode()) {
-                                String responseText = response.getText();
-                                GWT.log(responseText);
-                                JsArray<StockData> calamity = asArrayOfStockData(responseText);
-                                GWT.log(calamity.get(0).jssymbol());
-                            } else {
-                                GWT.log("MEGAFAIL");
-                            }
-                        }
-                    });
-                } catch (RequestException e) {
-                    GWT.log("MEGAFAIL2");
-                } finally {
                 }
             }
 

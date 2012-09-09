@@ -7,34 +7,27 @@
 (defn interpret-gwt-native-method [modifiers-and-annotations return-type method-name param-list body ]
   ( interpret-body-decl-method modifiers-and-annotations return-type method-name param-list body))
 
-;(defn interpret-gwt-panel [name form]
-;  (do (println name)
-;  (println form) 
-;  (binding [perc-zarg name]
-;    ( interpret-in-scope :gwt-panel form ) ) )) 
+(defn interpret-gwt-panel [name form]
+  (binding [*perc-scope-args* { :gwt-panel name }]
+    ( interpret-in-scope :gwt-panel form )))
 
-;(add-interpreters-to-scope :gwt-panel
-;  { 'nuts (interpreter [n f] `('. nuts smash))
-;    'log  (interpreter [n] `( '. GWT log n ))
-;   java.lang.String (fn [n s] s) })
+(reset-scope :gwt-panel)
 
-;(apply interpret-gwt-panel  '(
-;  Foo
-;  ('nuts "3")
-;;  "FoosBalls"
-;                              ) )
-;(add-interpreters-to-scope :statement
-;  { 'panelfy (interpreter [name & f] (map #(interpret-gwt-panel name % ) f))})
+(add-interpreters-to-scope :gwt-panel
+  { 'stoyle (interpreter [css-class] `('. ~(:gwt-panel *perc-scope-args*) addStyleName ~(interpret-expression css-class )))
+    ;'log  (interpreter [n] `( '. GWT log n ))
+   ;java.lang.String    (interpreter [s] `('. ~(:gwt-panel *perc-scope-args*) add ('new HTML ~s) ))
+   ;clojure.lang.Symbol (interpreter [s] `('. ~(:gwt-panel *perc-scope-args*) add ~s ))
+   })
 
-;(map (fn [form] (interpret-in-scope :statement form)) '(
-;  ('. foo bar)
-;  ('panelfy Foo )
-; ;   :.fooStyleName             ; symbol starting with . css style name
-;;    "FoosBalls"
-;
-;;     )
-;  ))
-;
+(inherit-scope :gwt-panel :statement identity)
+
+(add-interpreters-to-scope :statement
+  { 'panelfy (interpreter [name & f]
+               `('block
+                   ~@(map
+                       #(interpret-gwt-panel name % )
+                       f)))})
 
 ; do this at some point....
 ;(def jt-async-callback-for-parameters [parameters]
@@ -57,7 +50,6 @@
   { 'on-click   (interpreter [& statements] `( 'method #{:public} void onClick [ (ClickEvent e) ] ~@statements ))
     'on-key-up  (interpreter [& statements] `( 'method #{:public} void onKeyUp [ (KeyUpEvent e) ] ~@statements ))
     'gwt-native-method  interpret-gwt-native-method
-    'sucknuts  interpret-body-decl-method
    })
 
 (add-interpreters-to-scope :gwt-statement
@@ -82,8 +74,12 @@
     'log        (interpreter [n] `( '. GWT log ~n ))
     })
 
-(inherit-scope :statement :gwt-statement identity)
-(inherit-scope :body-decl :gwt-body-decl identity)
+(inherit-scope :statement :gwt-statement)
+(inherit-scope :gwt-statement :statement)
+(inherit-scope-recur :gwt-statement )
+(inherit-scope :body-decl :gwt-body-decl)
+(inherit-scope-recur :body-decl )
+(inherit-scope :gwt-body-decl :body-decl)
 
 (definterpreter gwt-new [class-name]
   `( '. GWT create ( 'class-expr ~class-name ) ))
@@ -122,23 +118,31 @@
              (let [ java-type         (first java-type-and-field-name)
                     field-name        (last java-type-and-field-name)
                     javascript-body   (apply str "return this." (.toString field-name ) ";" )
-                    method-name       (apply str "js" (.toString field-name )) ]
+                    method-name       (apply str "js" (.replaceAll (.toString field-name ) "\\." "_" )) ]
                `( 'gwt-native-method #{:public :final :native} ~java-type ~method-name [] ~javascript-body )))
-         extend-jso [ ( (interpreter [] '('extends JavaScriptObject)) ) ]
-         nullary-ctor [ ( (interpreter [] '('ctor #{:protected} StockData [] 'empty ) ) )  ]
+         extend-jso   [ '('extends JavaScriptObject)  ]
+         nullary-ctor [ ( (interpreter [n] `('ctor #{:protected} ~n [] ) ) class-name )  ]
          jsni-wrapper-method-decls ( map jsni-wrapper-decl java-type-json-field-name-pairs )
         ]
     `(compilation-unit 
        { :postprocessors [ hack-for-gwt-native-methods ] }
        ~package-name
        [ com.google.gwt.core.client.JavaScriptObject ]
-       (class-decl #{} ~class-name ~@( concat extend-jso nullary-ctor jsni-wrapper-method-decls user-body-decls )))))
+       (class-decl #{} ~class-name
+         ~@extend-jso
+         ~@nullary-ctor
+         ~@jsni-wrapper-method-decls
+         ~@user-body-decls ))))
 
 (jsni-proxy
-  com.whatsys.client StockData
-  [[ String symbol ] [ double price ] [ double change ]]
-  ('method #{:public :final} double getChangeRatio []
-    ('return ('/ ('. this jschange ) ('. this jsprice)))))
+  com.whatsys.client StMessage
+  [[ int id ] [ String body ] [ String created_at ] ]
+  )
+
+(jsni-proxy
+  com.whatsys.client StStreamResponse
+  [[ int id ] [ String body ] [ String created_at ] [ String user.username  ]]
+  )
 
 (compilation-unit
   ; metadata
@@ -164,7 +168,7 @@
     com.google.gwt.user.client.ui.TextBox
     com.google.gwt.user.client.ui.VerticalPanel
 
-    com.whatsys.client.StockData
+    com.whatsys.client.StMessage
 
     com.google.gwt.http.client.Request
     com.google.gwt.http.client.RequestBuilder
@@ -173,83 +177,67 @@
     com.google.gwt.http.client.Response
    ]
 
-  ; declare a public class Play
   (class-decl #{:public} Play
 
-
-    ; which implements the EntryPoint interface
    ( 'implements EntryPoint )
 
-    ; declare a static String field called SERVER_ERROR and initialize it
     ( 'field #{:private :static :final} String (SERVER_ERROR "D'oh!") )
-    ( 'field #{:private :static :final} String (JSON_URL "http://127.0.0.1:8888/jsontest.json") )
+    ( 'field #{:private :static :final} String (JSON_URL "http://127.0.0.1:8888/ststream.json") )
 
-    ; declare a member field of type GreetingServiceAsync and initialize it
     ( 'field #{:private :final} GreetingServiceAsync ( greetingService ('gwt-new GreetingService) ) )
 
-    ( 'gwt-native-method #{:private :final :native} JsArray<StockData> asArrayOfStockData [( String json )]
-        "return eval(json);"
+    ;( 'gwt-native-method #{:private :final :native} StStreamResponse streamResponse [( String json )]
+    ;    "return eval(json);"
+    ;    )
+
+    ( 'gwt-native-method #{:private :final :native} JsArray<StMessage> getMessages [( String json )]
+        "return eval(\"(\" +json + \")\").messages;"
         )
 
-    ; define a public, nullary method called onModuleLoad, returning void
     ( 'method #{:public} void onModuleLoad []
-      ; declare and initialize local variables sendButton and nameField
-      ( 'local #{:final} Button  (sendButton ('new Button "Send")) )
-      ( 'local #{:final} TextBox (nameField ('new TextBox)) )
-      ; call the method setText on the object nameField with the parameter "GWT User"
+      ( 'local #{:final} Button  (sendButton ('new Button "Send")))
+      ( 'local #{:final} TextBox (nameField  ('new TextBox)))
+      ( 'local #{:final} Label   (errorLabel ('new Label)))
       ( '. nameField setText "GWT User" )
-
-      ; getting obvious...
-      ( 'local #{:final} Label (errorLabel ('new Label)) )
       ( '. sendButton addStyleName "sendButton" )
 
-      ; of course expressions nest
-      ; everything up to this point is using just percolator core
-      ; here, 'add is a shorthand we defined above
-      ; it is a percolator interpreter in the scope :statement
       ( 'add  ( '. RootPanel get "nameFieldContainer"  ) nameField )
       ( 'add  ( '. RootPanel get "sendButtonContainer" ) sendButton )
       ( 'add  ( '. RootPanel get "errorLabelContainer" ) errorLabel )
 
-      ; some more trivial examples of user-defined interpreters
       ( 'focus nameField )
       ( 'select-all nameField )
 
-      ; this user-defined interpreter is declaring a local variable of class
-      ; DialogBox with the name dialogBox, and initializing it with the default
-      ; constructor
       ( 'dialog-box dialogBox )
 
-      ; calling methods on it
       ( '. dialogBox setText "RPC" )
       ( '. dialogBox setAnimationEnabled true )
 
-      ; similarly declaring a local button
       ( 'button closeButton )
 
-      ; set the DOM id of the element associated with the close button
       ( '. ( '. closeButton getElement ) setId "closeButton" )
 
       ( 'local #{:final} Label ( textToServerLabel ( 'new Label )) )
       ( 'local #{:final} HTML ( serverResponseLabel ( 'new HTML )) )
 
-      ; make a vertical panel
       ( 'local #{} VerticalPanel ( dialogVPanel ( 'new VerticalPanel )) )
 
-      ; give it a CSS class, and start adding things to it
       ( 'style dialogVPanel "dialogVPanel" )
-      ; it'd be nice integrate hiccup here:
+
+      ;( 'panelfy dialogVPanel
+      ;  ('stoyle "supkahahaha")
+      ;  ;"<b>My super sweet html blob</b>"
+      ;  ;textToServerLabel
+      ;    )
+
       ( 'add dialogVPanel ( 'new HTML "<b> Sending name to the server: </b>" ) )
       ( 'add dialogVPanel textToServerLabel )
-      ; and removing the repetition with some new interpreters
       ( 'add dialogVPanel ( 'new HTML "<br><b> Server replies: </b>" ) )
       ( 'add dialogVPanel serverResponseLabel )
       ( '. dialogVPanel setHorizontalAlignment VerticalPanel/ALIGN_RIGHT )
 
-      ; stuff dialog panel in dialog box
       ( 'set-widget dialogBox dialogVPanel )
 
-      ; this does exactly what it looks like
       ( 'on-click closeButton
         ( 'hide dialogBox )
         ( 'enable sendButton )
@@ -264,45 +252,39 @@
             ( 'log "My balls are on fire" )
             )
 
-        ; in this handler method, there's an if branch
-        ; e.getNativeKeyCode() == KeyCodes/KEY_ENTER
         ( 'on-key-up
-          ( 'if ( '==
-                  ( '. e getNativeKeyCode )
-                  KeyCodes/KEY_ENTER )
+          ( 'if ( '== ( '. e getNativeKeyCode ) KeyCodes/KEY_ENTER )
             (('. this sendNameToServer ))))
 
-        ( 'method #{:public} void doSomeCrazyShit [] 
-          ( 'local #{} RequestBuilder (builder ('new RequestBuilder RequestBuilder/GET JSON_URL)) )
+        ;( 'method #{:public} void doSomeCrazyShit [] 
+        ;  ( 'local #{} RequestBuilder (builder ('new RequestBuilder RequestBuilder/GET JSON_URL)) )
 
-          ( 'try (
+        ;  ( 'try (
 
-          ( 'local #{} Request (request ('. builder sendRequest null
-                                           ('new RequestCallback
-                                              ('method #{:public} void onError [(Request request) (Throwable e)] 'empty )
-                                              ('method #{:public} void onResponseReceived [(Request request) (Response response)]
-                                                 ('if
-                                                    ('== 200 ('. response getStatusCode ))
-                                                    (
-                                                     ( 'local #{} String ( responseText ('. response getText) ))
-                                                     ( 'log responseText )
-                                                     ( 'local #{} JsArray<StockData> (calamity ('. nil asArrayOfStockData responseText )))
-                                                     ( 'log
-                                                         ('.
-                                                            ('. calamity get 0 )
-                                                            jssymbol
-                                                            )
-                                                         )
-                                                     
-                                                     )
-                                                    (('log "MEGAFAIL")))))))))
-              ((RequestException e)
-                 ('log "MEGAFAIL2")
-                 )
-          ))
+        ;  ( 'local #{} Request (request ('. builder sendRequest null
+        ;                                   ('new RequestCallback
+        ;                                      ('method #{:public} void onError [(Request request) (Throwable e)] 'empty )
+        ;                                      ('method #{:public} void onResponseReceived [(Request request) (Response response)]
+        ;                                         ('if
+        ;                                            ('== 200 ('. response getStatusCode ))
+        ;                                            (
+        ;                                             ( 'local #{} String ( responseText ('. response getText) ))
+        ;                                             ( 'log responseText )
+        ;                                             ( 'local #{} JsArray<StMessage> (calamity ('. nil getMessages responseText )))
+        ;                                             ( 'log
+        ;                                                 ('.
+        ;                                                    ('. calamity get 0 )
+        ;                                                    jsbody)
+        ;                                                 )
+        ;                                             
+        ;                                             )
+        ;                                            (('log "MEGAFAIL")))))))))
+        ;      ((RequestException e)
+        ;         ('log "MEGAFAIL2")
+        ;         )
+        ;  ))
 
 
-    ;private final native JsArray<StockData> asArrayOfStockData(String json) /*-{return eval(json);}-*/;
         ; okay, moment of truth, the user has pressed and released the <Enter> key
         ( 'method #{:public} void sendNameToServer []
           ( 'set-text errorLabel "" )
@@ -339,3 +321,10 @@
 
   )))
 
+
+;(doseq [x (map #( .toString (eval ( interpret-body-decl % ) )) '(
+;                              ;( '+ ( '- 5 7 ) 2 )
+;                              ;( 'add somepanel ( '. somewhere getAWidget ) )
+;  ( 'field #{:private :static :final} String (SERVER_ERROR "D'oo!") )
+;  ( 'method #{:public} void onFailure [(Throwable e)] ( 'return 3))
+;                              ))] ( println x ))
