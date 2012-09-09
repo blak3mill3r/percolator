@@ -111,23 +111,3 @@
 ; by wrapping it in `(new ExpressionStmt ~expr)
 ; this is cool...
 (inherit-scope :statement :expression (fn [expr] `(new ExpressionStmt ~expr)))
-
-;(.toString (eval (apply interpret-statement '(
-;
-;                             ( 'return 3 )
-;                             )) ))
-(doseq [x (map #(.toString (eval %)) (map interpret-statement '(
-
-                             ( 'return 3 )
-
-'('if ('. dung heaping  ) (('return 1))  )
-'('try (
-   ('. dung poop))
-   ((RequestException e)
-      ('. GWT log "Nutsack!")
-      )
-   ('finally
-      ('. Someshit freeMemory)))
-
-                             )))] ( println x ))
-
