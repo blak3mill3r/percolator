@@ -25,7 +25,7 @@
   (map (fn [p]
          (let [ name       (.toString (key p))
                 value-expr (interpret-expression ( val p ) ) ]
-           `(new MemberValuePair "chong" ~value-expr )))
+           `(new MemberValuePair ~name ~value-expr )))
        name-value-pairs))
 
 (defn interpret-annotation [& args]
@@ -120,7 +120,7 @@
     `( new ClassOrInterfaceDeclaration
           nil ; javadoc
           ~modifiers
-          [ ~@(map #(apply interpret-annotation %1) (:annotations modifiers-and-annotations)) ]
+          [ ~@(map #(apply interpret-annotation %1) annotations) ]
           false ; isInterface
           ~(.toString class-name)
           nil ; list of TypeParameter
@@ -136,7 +136,7 @@
     `( new ClassOrInterfaceDeclaration
           nil ; javadoc
           ~modifiers
-          [ ~@(map #(apply interpret-annotation %1) (:annotations modifiers-and-annotations)) ]
+          [ ~@(map #(apply interpret-annotation %1) annotations) ]
           true ; isInterface
           ~(.toString class-name)
           nil ; list of TypeParameter

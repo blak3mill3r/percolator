@@ -31,10 +31,10 @@
 ; FIXME rename this extract-modifiers-annotations-and-throws
 ; or something
 (defn extract-modifiers-and-annotations [form]
-  (let [ throws-lookin (filter #(symbol? %) form)
-         modifier-lookin ( filter #(keyword? %) form )
-         annotation-lookin (first (filter #(vector? %) form )) ]
-    {:modifiers (reduce bit-or 0 (map modifiers-keywords modifier-lookin)) 
-     :annotations annotation-lookin
-     :throws (when-not (empty? throws-lookin) `[ ~@( map (fn [s] `(new NameExpr ~(.toString s))) throws-lookin)] )
-     } ))
+  (let [ throws-lookin     (filter #(symbol?  %) form)
+         modifier-lookin   (filter #(keyword? %) form)
+         annotation-lookin (first (filter #(vector? %) form )) ] ; TODO warn on incorrect syntax for annotations
+    { :modifiers              (reduce bit-or 0 (map modifiers-keywords modifier-lookin)) 
+      :annotations            annotation-lookin
+      :throws                 (when-not (empty? throws-lookin)
+                                `[ ~@( map (fn [s] `(new NameExpr ~(.toString s))) throws-lookin)] ) }))
