@@ -38,9 +38,12 @@
          `(new MarkerAnnotationExpr ~name-expr )))))
 
 (defn interpret-body-decl-method [modifiers-and-annotations return-type method-name param-list & body]
-  (let [ empty-body? (= (.toString (last (first body) ) ) "empty")
-         body-block (when-not empty-body?
-                      (when body
+  (let [ explicit-empty-body? (and (seq? body) ; the body consist of 1 element which is (quote empty)
+                                   (seq? (first body))
+                                   (= (.toString (last (first body) ) ) "empty"))
+         body-block (if explicit-empty-body?
+                      (interpret-block [])
+                      (when-not (empty? body)
                         (interpret-block body)))
         { :keys [modifiers annotations throws]} (extract-modifiers-and-annotations modifiers-and-annotations) ]
     `(doto
@@ -54,15 +57,15 @@
          [ ~@(map #(apply interpret-parameter %1) param-list) ]
          0 ; array count
          ~throws
-         ~(or body-block (interpret-block []))
-         )) ))
+         ~body-block))))
 
 (defn interpret-body-decl-ctor [modifiers-and-annotations method-name param-list & body]
-  (let [ empty-body? (and body
+  (let [ explicit-empty-body? (and body
                           (seq? body)
                           (= (.toString (last (first body) ) ) "empty"))
-         body-block (when-not empty-body?
-                      (when body
+         body-block (if explicit-empty-body?
+                      (interpret-block [])
+                      (when-not (empty? body)
                         (interpret-block body)))
         { :keys [modifiers annotations throws]} (extract-modifiers-and-annotations modifiers-and-annotations) ]
     `(doto
@@ -74,7 +77,7 @@
          ~(.toString method-name)
          [ ~@(map #(apply interpret-parameter %1) param-list) ]
          ~throws
-         ~(or body-block (interpret-block []))))))
+         ~body-block))))
 
 ;FIXME add support for annotations javadoc etc
 (defn interpret-body-decl-field [modifiers-and-annotations java-type & declarators]
@@ -133,7 +136,7 @@
     `( new ClassOrInterfaceDeclaration
           nil ; javadoc
           ~modifiers
-          [ ~@(map #(apply interpret-annotation %1) annotations) ]
+          [ ~@(map #(apply interpret-annotation %1) (:annotations modifiers-and-annotations)) ]
           true ; isInterface
           ~(.toString class-name)
           nil ; list of TypeParameter

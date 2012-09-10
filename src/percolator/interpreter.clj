@@ -66,6 +66,12 @@
       (merge
         (or (one-scope scope-dependencies) #{})
         another-scope)))
+  (when-not (empty? (another-scope scope-inheritance-wrappers))
+    (def scope-inheritance-wrappers
+        (assoc scope-inheritance-wrappers one-scope
+               (merge
+                 (or (one-scope scope-inheritance-wrappers) {})
+                 (another-scope scope-inheritance-wrappers) ))))
   (when-not (empty? wrapper)
     (def scope-inheritance-wrappers
       (assoc scope-inheritance-wrappers one-scope
@@ -81,6 +87,11 @@
 (defn- scope-dependency-traversal [scope]
   "return a list defining the search path for interpreters for the given scope"
   (reverse (tarjan scope-dependencies scope)))
+
+;( map #(scope-dependency-traversal %)
+; [ :gwt-panel
+;   :statement
+;   :gwt-statement ])
 
 (defn interpreters-and-sources-in-scope [scope]
   "return a map of all interpreter keys available for a given scope to values which are 2-element vectors of [interpreter-fn, scope-name], produce an error for name collisions, TODO cache this"
@@ -100,6 +111,14 @@
     (if
       ( = 'quote (first form) ) 
         (last form))))
+
+;(
+; drop 1
+;)
+;
+;            (extract-interpreter-key-from-form (first 
+;  '(new japa.parser.ast.stmt.ExpressionStmt (new japa.parser.ast.expr.MethodCallExpr (new japa.parser.ast.expr.NameExpr "Foohoho") "ass" []))
+;                                                 ))
 
 (defn interpret-in-scope [scope form]
   "interpret percolator form /form/ in scope /scope/ returning a Java object representing the AST node(s)"
@@ -122,28 +141,37 @@
           (first (take 1 (drop-while not ; find the value from the first key that matches one of the maps in the vector
             (for [scs interpreters-and-sources] (scs interpreter-key)))) )
         interpreter-fn
-          (first interpreter-and-source)
+          (when interpreter-and-source (first interpreter-and-source) )
         interpreter-source
-          (last interpreter-and-source)
+          (when interpreter-and-source (last interpreter-and-source) )
         interpreter-wrapper-fn
           (when interpreter-source
             (or
               (when (not (= scope interpreter-source)) ; not from current scope, check for wrapper fn
-                (interpreter-source (scope scope-inheritance-wrappers)))
+                (interpreter-source (scope scope-inheritance-wrappers))) ; FIXME this part is wrong, it only checks for direct link from :gwt-panel to :expression, which isn't there, so fail
               identity))
         ]
-    (if interpreter-fn
-      (let [result (interpreter-wrapper-fn ( apply interpreter-fn interpreter-arguments) )
-            ;recursive-result (interpret-in-scope scope result)
-            ]
-        (if (looks-percolatorish result) ; recur until it isn't a valid percolator form, then eval
-          (interpret-in-scope scope result)
-            result ))
-      ; no interpreter found in any inherited scope
-      (if ( looks-percolatorish form)
-        ( throw (Throwable. (string/join ["Shitty death with sources " (string/join (map #(.toString %) (first (take 1 interpreters-and-sources ) ) ) )  " on form " (.toString form) "\nscope "  scope " no interpreter-fn for key " (.toString interpreter-key ) " which looks like it should be a percolator form"] )))
-        (interpreter-wrapper-fn form )
-        ;( throw (Throwable. (string/join [ "Doesnt look percolatorish but I dont have a fn for it: " (.toString form ) ])) )
-        ) )))
+    (do
+      ; FIXME this revealed the problem with 'kazoo
+      ;(println "interpret-in-scope " scope " " (.toString form))
+      ;(println "found interpreter? " (.toString ( not ( not interpreter-fn ))))
+      ;(println "found in scope " interpreter-source)
+      ;(println "scope dependency traversal: " (scope-dependency-traversal scope))
+
+      (if interpreter-fn
+        (let [result (interpreter-wrapper-fn ( apply interpreter-fn interpreter-arguments) )
+              ;recursive-result (interpret-in-scope scope result)
+              ]
+          (if (looks-percolatorish result) ; recur until it isn't a valid percolator form, then eval
+            (interpret-in-scope scope result)
+              result ))
+        ; no interpreter found in any inherited scope
+        (if ( looks-percolatorish form)
+          ( throw (Throwable. (string/join ["Shitty death with sources " (.toString (first (take 1 interpreters-and-sources ) ) ) "\n" (.toString (last (take 2 interpreters-and-sources ) ) ) "\n" (.toString (last (take 3 interpreters-and-sources ) ) )  " on form " "\n" (.toString form) "\nscope "  scope " no interpreter-fn for key " "\n" (.toString interpreter-key ) " which looks like it should be a percolator form"] )))
+          (do
+            ;(println "about to eval\n" (.toString form ))
+            (eval form) )
+          ;( throw (Throwable. (string/join [ "Doesnt look percolatorish but I dont have a fn for it: " (.toString form ) ])) )
+          ) ) )))
 ;( throw (Throwable. (string/join ["Shitty death on form " (.toString form) "\n no interpreter-fn for key " (.toString interpreter-key ) " which is a " (.toString (class interpreter-key))] )))
  

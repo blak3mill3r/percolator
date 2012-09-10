@@ -140,18 +140,26 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
      (keys (ns-publics a-namespace))))
 
 (defn source-path-for-unit [cu]
-  (string/replace 
-    (.toString ( .getName (.getPackage cu)))
-    "." "/"))
+  (try
+    (string/replace (.toString ( .getName (.getPackage cu))) "." "/")
+    (catch NullPointerException e
+      nil)))
 
 (defn java-file-name-for-unit [cu]
-  (.getName (first (.getTypes cu)))) ; FIXME this relies on there being only 1 type in the cu FIXME retarded will break
+  (try
+    (.getName (first (.getTypes cu)))
+    (catch NullPointerException e
+      nil))) ; FIXME this relies on there being only 1 type in the cu FIXME retarded will break
 
 (defn relative-path-for-cu [cu]
-  (string/join [
-    (string/join "/" [ ( source-path-for-unit cu ) ( java-file-name-for-unit cu ) ])
-    ".java"
-  ]))
+  (let [ file-path ( source-path-for-unit cu )
+         file-name ( java-file-name-for-unit cu )]
+    (if
+      (and file-path file-name)
+      (string/join [
+        (string/join "/" [  file-path file-name ])
+          ".java" ])
+        (throw (Throwable. "badcuvar"))))) ; FIXME use slingshot
 
 
 
@@ -160,16 +168,23 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
   (let [{:keys [ast metadata]} cu]
     (let [{:keys [postprocessors] :or []} metadata ]
       (let [ relative-path ( relative-path-for-cu ast )
-             full-path (string/join "/" [path relative-path] )
+             full-path (when relative-path (string/join "/" [path relative-path] ) )
              postprocessor (or (first postprocessors) identity) ; FIXME limited to 1 postprocessor
-             java-source-string ( postprocessor (.toString ast)  )
+             java-source-string (when relative-path ( postprocessor (.toString ast)  ) )
             ]
-          (with-open [w (writer (file full-path))]
-            (binding [*out* w]
-              (print java-source-string ))
-            full-path))))) ; return the path I guess, instead of the result of print?
+          (when full-path
+            (with-open [w (writer (file full-path))]
+              (binding [*out* w]
+                (print java-source-string ))
+              full-path) ))))) ; return the path I guess, instead of the result of print?
 
 ; write .java files for all the percolator compilation units defined in cu-namespace
 (defn write-all-cus-to-path [cu-namespace path]
   (doseq [cu (compilation-units-in-namespace cu-namespace) ]
-    (write-cu-to-path @(ns-resolve cu-namespace cu ) path)))
+    (try
+      (write-cu-to-path @(ns-resolve cu-namespace cu ) path)
+      (catch Throwable e
+        (if (re-find #"badcuvar" (.toString e))
+          (do
+            (println "clearing 1 broken compilation unit var")
+            (ns-unmap (find-ns cu-namespace) cu)))))))
