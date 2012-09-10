@@ -7,27 +7,54 @@
 (defn interpret-gwt-native-method [modifiers-and-annotations return-type method-name param-list body ]
   ( interpret-body-decl-method modifiers-and-annotations return-type method-name param-list body))
 
-(defn interpret-gwt-panel [name form]
+(defn interpret-gwt-panel [name forms]
   (binding [*perc-scope-args* { :gwt-panel name }]
-    ( interpret-in-scope :gwt-panel form )))
+    (doall ; do not forget this, force lazy-seq evaluations up front so they see the binding
+      (map #( interpret-in-scope :gwt-panel % ) forms ))))
 
-(reset-scope :gwt-panel)
+(inherit-scope       :gwt-panel       :statement     ) 
+(inherit-scope       :statement       :gwt-statement ) 
+(inherit-scope       :gwt-statement   :statement     ) 
+(inherit-scope       :body-decl       :gwt-body-decl ) 
+(inherit-scope       :gwt-body-decl   :body-decl     ) 
 
-(add-interpreters-to-scope :gwt-panel
-  { 'stoyle (interpreter [css-class] `('. ~(:gwt-panel *perc-scope-args*) addStyleName ~(interpret-expression css-class )))
-    ;'log  (interpreter [n] `( '. GWT log n ))
-   ;java.lang.String    (interpreter [s] `('. ~(:gwt-panel *perc-scope-args*) add ('new HTML ~s) ))
-   ;clojure.lang.Symbol (interpreter [s] `('. ~(:gwt-panel *perc-scope-args*) add ~s ))
+(inherit-scope-recur :gwt-statement                  ) 
+(inherit-scope-recur :body-decl                      ) 
+
+;scope-inheritance-wrappers
+
+;(apply interpret-statement '(
+;(new japa.parser.ast.stmt.ExpressionStmt (new japa.parser.ast.expr.MethodCallExpr (new japa.parser.ast.expr.NameExpr "Foohoho") "ass" []))
+;  ))
+
+(def interpret-halign
+  { 'right 'VerticalPanel/ALIGN_RIGHT
+    'left  'VerticalPanel/ALIGN_LEFT
    })
 
-(inherit-scope :gwt-panel :statement identity)
+(definterpreter interpret-gwt-panel-keyword [k]
+                (let [s (rest (.toString k) )
+                      context (first s)
+                      payload (apply str (rest s) )]
+                  (if (= \. context )
+                    `('. ~(:gwt-panel *perc-scope-args*) addStyleName ~payload)
+                    (if (= \# context )
+                      `( '. ( '. ~(:gwt-panel *perc-scope-args*) getElement ) setId ~payload )
+                      (throw ( Throwable. (apply str "Misuse of clojure keyword " k " in gwt-panel, the keyword should start with a . or a #"  )))))))
+
+(add-interpreters-to-scope :gwt-panel
+  { 'style (interpreter [css-class] `('. ~(:gwt-panel *perc-scope-args*) addStyleName ~(interpret-expression css-class )) )
+    'kazoo (interpreter [] `('. Foohoho ass))
+    java.lang.String    (interpreter [s] `('. ~(:gwt-panel *perc-scope-args*) add ('new HTML ~s) ))
+    clojure.lang.Symbol (interpreter [s] `('. ~(:gwt-panel *perc-scope-args*) add ~s ))
+    clojure.lang.Keyword interpret-gwt-panel-keyword
+    'h-align (interpreter [s] `( '. dialogVPanel setHorizontalAlignment ~(interpret-halign s) ))
+   })
 
 (add-interpreters-to-scope :statement
-  { 'panelfy (interpreter [name & f]
-               `('block
-                   ~@(map
-                       #(interpret-gwt-panel name % )
-                       f)))})
+  { 'panelfy
+      (interpreter [name & forms]
+        `('block ~@(interpret-gwt-panel name forms)))})
 
 ; do this at some point....
 ;(def jt-async-callback-for-parameters [parameters]
@@ -73,13 +100,6 @@
     'dialog-box (interpreter [n] `( 'local #{:final} DialogBox (~n ('new DialogBox   )) ))
     'log        (interpreter [n] `( '. GWT log ~n ))
     })
-
-(inherit-scope :statement :gwt-statement)
-(inherit-scope :gwt-statement :statement)
-(inherit-scope-recur :gwt-statement )
-(inherit-scope :body-decl :gwt-body-decl)
-(inherit-scope-recur :body-decl )
-(inherit-scope :gwt-body-decl :body-decl)
 
 (definterpreter gwt-new [class-name]
   `( '. GWT create ( 'class-expr ~class-name ) ))
@@ -222,26 +242,21 @@
 
       ( 'local #{} VerticalPanel ( dialogVPanel ( 'new VerticalPanel )) )
 
-      ( 'style dialogVPanel "dialogVPanel" )
-
-      ;( 'panelfy dialogVPanel
-      ;  ('stoyle "supkahahaha")
-      ;  ;"<b>My super sweet html blob</b>"
-      ;  ;textToServerLabel
-      ;    )
-
-      ( 'add dialogVPanel ( 'new HTML "<b> Sending name to the server: </b>" ) )
-      ( 'add dialogVPanel textToServerLabel )
-      ( 'add dialogVPanel ( 'new HTML "<br><b> Server replies: </b>" ) )
-      ( 'add dialogVPanel serverResponseLabel )
-      ( '. dialogVPanel setHorizontalAlignment VerticalPanel/ALIGN_RIGHT )
+      ( 'panelfy dialogVPanel
+        ;:#domidforpanel
+        :.dialogVPanel
+        "<b>My super sweet html blob</b>"
+        textToServerLabel
+        "<br><b> Server replies: </b>"
+        serverResponseLabel
+        ('h-align right))
 
       ( 'set-widget dialogBox dialogVPanel )
 
       ( 'on-click closeButton
-        ( 'hide dialogBox )
-        ( 'enable sendButton )
-        ( 'focus sendButton ))
+        ( 'hide   dialogBox  ) 
+        ( 'enable sendButton ) 
+        ( 'focus  sendButton ))
 
       ( 'class #{} MyHandler
         ( 'implements ClickHandler KeyUpHandler )
@@ -256,33 +271,33 @@
           ( 'if ( '== ( '. e getNativeKeyCode ) KeyCodes/KEY_ENTER )
             (('. this sendNameToServer ))))
 
-        ;( 'method #{:public} void doSomeCrazyShit [] 
-        ;  ( 'local #{} RequestBuilder (builder ('new RequestBuilder RequestBuilder/GET JSON_URL)) )
+        ( 'method #{:public} void doSomeCrazyShit [] 
+          ( 'local #{} RequestBuilder (builder ('new RequestBuilder RequestBuilder/GET JSON_URL)) )
 
-        ;  ( 'try (
+          ( 'try (
 
-        ;  ( 'local #{} Request (request ('. builder sendRequest null
-        ;                                   ('new RequestCallback
-        ;                                      ('method #{:public} void onError [(Request request) (Throwable e)] 'empty )
-        ;                                      ('method #{:public} void onResponseReceived [(Request request) (Response response)]
-        ;                                         ('if
-        ;                                            ('== 200 ('. response getStatusCode ))
-        ;                                            (
-        ;                                             ( 'local #{} String ( responseText ('. response getText) ))
-        ;                                             ( 'log responseText )
-        ;                                             ( 'local #{} JsArray<StMessage> (calamity ('. nil getMessages responseText )))
-        ;                                             ( 'log
-        ;                                                 ('.
-        ;                                                    ('. calamity get 0 )
-        ;                                                    jsbody)
-        ;                                                 )
-        ;                                             
-        ;                                             )
-        ;                                            (('log "MEGAFAIL")))))))))
-        ;      ((RequestException e)
-        ;         ('log "MEGAFAIL2")
-        ;         )
-        ;  ))
+          ( 'local #{} Request (request ('. builder sendRequest null
+                                           ('new RequestCallback
+                                              ('method #{:public} void onError [(Request request) (Throwable e)] 'empty )
+                                              ('method #{:public} void onResponseReceived [(Request request) (Response response)]
+                                                 ('if
+                                                    ('== 200 ('. response getStatusCode ))
+                                                    (
+                                                     ( 'local #{} String ( responseText ('. response getText) ))
+                                                     ( 'log responseText )
+                                                     ( 'local #{} JsArray<StMessage> (calamity ('. nil getMessages responseText )))
+                                                     ( 'log
+                                                         ('.
+                                                            ('. calamity get 0 )
+                                                            jsbody)
+                                                         )
+                                                     
+                                                     )
+                                                    (('log "MEGAFAIL")))))))))
+              ((RequestException e)
+                 ('log "MEGAFAIL2")
+                 )
+          ))
 
 
         ; okay, moment of truth, the user has pressed and released the <Enter> key

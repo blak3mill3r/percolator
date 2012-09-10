@@ -52,12 +52,14 @@ public class Play implements EntryPoint {
         final Label textToServerLabel = new Label();
         final HTML serverResponseLabel = new HTML();
         VerticalPanel dialogVPanel = new VerticalPanel();
-        dialogVPanel.addStyleName("dialogVPanel");
-        dialogVPanel.add(new HTML("<b> Sending name to the server: </b>"));
-        dialogVPanel.add(textToServerLabel);
-        dialogVPanel.add(new HTML("<br><b> Server replies: </b>"));
-        dialogVPanel.add(serverResponseLabel);
-        dialogVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
+        {
+            dialogVPanel.addStyleName("dialogVPanel");
+            dialogVPanel.add(new HTML("<b>My super sweet html blob</b>"));
+            dialogVPanel.add(textToServerLabel);
+            dialogVPanel.add(new HTML("<br><b> Server replies: </b>"));
+            dialogVPanel.add(serverResponseLabel);
+            dialogVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
+        }
         dialogBox.setWidget(dialogVPanel);
         closeButton.addClickHandler(new ClickHandler() {
 
@@ -77,6 +79,31 @@ public class Play implements EntryPoint {
             public void onKeyUp(KeyUpEvent e) {
                 if (e.getNativeKeyCode() == KeyCodes.KEY_ENTER) {
                     this.sendNameToServer();
+                }
+            }
+
+            public void doSomeCrazyShit() {
+                RequestBuilder builder = new RequestBuilder(RequestBuilder.GET, JSON_URL);
+                try {
+                    Request request = builder.sendRequest(null, new RequestCallback() {
+
+                        public void onError(Request request, Throwable e) {
+                        }
+
+                        public void onResponseReceived(Request request, Response response) {
+                            if (200 == response.getStatusCode()) {
+                                String responseText = response.getText();
+                                GWT.log(responseText);
+                                JsArray<StMessage> calamity = getMessages(responseText);
+                                GWT.log(calamity.get(0).jsbody());
+                            } else {
+                                GWT.log("MEGAFAIL");
+                            }
+                        }
+                    });
+                } catch (RequestException e) {
+                    GWT.log("MEGAFAIL2");
+                } finally {
                 }
             }
 

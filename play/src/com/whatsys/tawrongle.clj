@@ -2,7 +2,7 @@
   ( :require [clojure.string :as string] )
   ( :use     [percolator.core]))
 
-(compilation-unit com.whatsys.server
+(compilation-unit {} com.whatsys.server
 
   [ com.whatsys.client.GreetingService
     com.whatsys.shared.FieldVerifier
@@ -17,7 +17,7 @@
        (('return "The server's nuts are on fire ooh!"))))))
 
 
-(compilation-unit com.whatsys.shared []
+(compilation-unit {} com.whatsys.shared []
   (class-decl #{:public} FieldVerifier
     ( 'method #{:public :static} boolean isValidName [(String name)]
       ('if ('== name null)
@@ -25,11 +25,13 @@
       ('return
         ( '> ('. name length) 5 )))))
 
-(compilation-unit com.whatsys.client [com.google.gwt.user.client.rpc.AsyncCallback]
+(compilation-unit {} com.whatsys.client [com.google.gwt.user.client.rpc.AsyncCallback]
   (interface-decl #{:public} GreetingServiceAsync
-    ( 'method #{ IllegalArgumentException } void greetServer [(String name) (AsyncCallback<String> callback)])))
+    ( 'method #{ IllegalArgumentException } void greetServer [(String name) (AsyncCallback<String> callback)]
+        )
+                  ))
 
-(compilation-unit com.whatsys.client
+(compilation-unit {} com.whatsys.client
   [ com.google.gwt.user.client.rpc.RemoteService
     com.google.gwt.user.client.rpc.RemoteServiceRelativePath ]
     (interface-decl #{:public [(RemoteServiceRelativePath "greet")]} GreetingService

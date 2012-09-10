@@ -169,8 +169,7 @@
         (if ( looks-percolatorish form)
           ( throw (Throwable. (string/join ["Shitty death with sources " (.toString (first (take 1 interpreters-and-sources ) ) ) "\n" (.toString (last (take 2 interpreters-and-sources ) ) ) "\n" (.toString (last (take 3 interpreters-and-sources ) ) )  " on form " "\n" (.toString form) "\nscope "  scope " no interpreter-fn for key " "\n" (.toString interpreter-key ) " which looks like it should be a percolator form"] )))
           (do
-            ;(println "about to eval\n" (.toString form ))
-            (eval form) )
+            form ) ; sometimes I have thought (eval form) here but I think that's wrong, think about this more
           ;( throw (Throwable. (string/join [ "Doesnt look percolatorish but I dont have a fn for it: " (.toString form ) ])) )
           ) ) )))
 ;( throw (Throwable. (string/join ["Shitty death on form " (.toString form) "\n no interpreter-fn for key " (.toString interpreter-key ) " which is a " (.toString (class interpreter-key))] )))
