@@ -23,4 +23,5 @@
   :gwt-options-devmode {}
   :percolator-options {}
   :percolator-namespaces [com.whatsys.test com.whatsys.tawrongle]
+  :source-path "src"
             )
