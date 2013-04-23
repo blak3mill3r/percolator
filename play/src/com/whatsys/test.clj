@@ -7,25 +7,21 @@
 (defn interpret-gwt-native-method [modifiers-and-annotations return-type method-name param-list body ]
   ( interpret-body-decl-method modifiers-and-annotations return-type method-name param-list body))
 
-(defn interpret-gwt-panel [name forms]
-  (binding [*perc-scope-args* { :gwt-panel name }]
+; this panelfy thing should have an abstraction
+; these 2 patterns ought to be easy
+; 1) modify statements with a different scope like :gwt-panel
+; 2) pass a parameter like panel-expr into an interpreter, so all the panel
+;    statements inside know to which panel they refer
+(defn interpret-gwt-panel [panel-expr forms]
+  (binding [*perc-scope-args* { :gwt-panel panel-expr }]
     (doall ; do not forget this, force lazy-seq evaluations up front so they see the binding
       (map #( interpret-in-scope :gwt-panel % ) forms ))))
 
-(inherit-scope       :gwt-panel       :statement     ) 
-(inherit-scope       :statement       :gwt-statement ) 
-(inherit-scope       :gwt-statement   :statement     ) 
-(inherit-scope       :body-decl       :gwt-body-decl ) 
-(inherit-scope       :gwt-body-decl   :body-decl     ) 
-
-(inherit-scope-recur :gwt-statement                  ) 
-(inherit-scope-recur :body-decl                      ) 
-
-;scope-inheritance-wrappers
-
-;(apply interpret-statement '(
-;(new japa.parser.ast.stmt.ExpressionStmt (new japa.parser.ast.expr.MethodCallExpr (new japa.parser.ast.expr.NameExpr "Foohoho") "ass" []))
-;  ))
+; gwt-panel must inherit statement because gwt-panel forms expand into statement forms
+(inherit-scope       :gwt-panel       :statement )
+(inherit-scope       :statement       :gwt-statement )
+(inherit-scope       :body-decl       :gwt-body-decl )
+(inherit-scope       :expression      :gwt-expression )
 
 (def interpret-halign
   { 'right 'VerticalPanel/ALIGN_RIGHT
@@ -33,28 +29,29 @@
    })
 
 (definterpreter interpret-gwt-panel-keyword [k]
-                (let [s (rest (.toString k) )
-                      context (first s)
-                      payload (apply str (rest s) )]
-                  (if (= \. context )
-                    `('. ~(:gwt-panel *perc-scope-args*) addStyleName ~payload)
-                    (if (= \# context )
-                      `( '. ( '. ~(:gwt-panel *perc-scope-args*) getElement ) setId ~payload )
-                      (throw ( Throwable. (apply str "Misuse of clojure keyword " k " in gwt-panel, the keyword should start with a . or a #"  )))))))
+  (let [s (rest (.toString k) )
+        context (first s)
+        payload (apply str (rest s) )]
+    (if (= \. context )
+      `('. ~(:gwt-panel *perc-scope-args*) addStyleName ~payload)
+      (if (= \# context )
+        `( '. ( '. ~(:gwt-panel *perc-scope-args*) getElement ) setId ~payload )
+        (throw ( Throwable. (apply str "Misuse of clojure keyword " k " in gwt-panel, the keyword should start with a . or a #"  )))))))
 
 (add-interpreters-to-scope :gwt-panel
   { 'style (interpreter [css-class] `('. ~(:gwt-panel *perc-scope-args*) addStyleName ~(interpret-expression css-class )) )
-    'kazoo (interpreter [] `('. Foohoho ass))
+    ;'kazoo (interpreter [] `('. Foohoho ass))
     java.lang.String    (interpreter [s] `('. ~(:gwt-panel *perc-scope-args*) add ('new HTML ~s) ))
     clojure.lang.Symbol (interpreter [s] `('. ~(:gwt-panel *perc-scope-args*) add ~s ))
     clojure.lang.Keyword interpret-gwt-panel-keyword
-    'h-align (interpreter [s] `( '. dialogVPanel setHorizontalAlignment ~(interpret-halign s) ))
+    'h-align (interpreter [s] `( '. ~(:gwt-panel *perc-scope-args*) setHorizontalAlignment ~(interpret-halign s) ))
    })
 
-(add-interpreters-to-scope :statement
+; use raw-block to avoid having panel forms double-interpreted, which causes infinite recursion
+(add-interpreters-to-scope :gwt-statement
   { 'panelfy
-      (interpreter [name & forms]
-        `('block ~@(interpret-gwt-panel name forms)))})
+      (interpreter [panel-expr & forms]
+        `('raw-block ~@(interpret-gwt-panel panel-expr forms)))})
 
 ; do this at some point....
 ;(def jt-async-callback-for-parameters [parameters]
@@ -104,7 +101,7 @@
 (definterpreter gwt-new [class-name]
   `( '. GWT create ( 'class-expr ~class-name ) ))
 
-(add-interpreters-to-scope :expression
+(add-interpreters-to-scope :gwt-expression
   { 'gwt-new gwt-new })
 
 ; that was for gwt
@@ -119,7 +116,7 @@
      ( 'focus closeButton )
      ))
 
-(add-interpreters-to-scope :statement
+(add-interpreters-to-scope :gwt-statement
   { 'show-dialog show-dialog
    })
 
@@ -153,16 +150,6 @@
          ~@nullary-ctor
          ~@jsni-wrapper-method-decls
          ~@user-body-decls ))))
-
-(jsni-proxy
-  com.whatsys.client StMessage
-  [[ int id ] [ String body ] [ String created_at ] ]
-  )
-
-(jsni-proxy
-  com.whatsys.client StStreamResponse
-  [[ int id ] [ String body ] [ String created_at ] [ String user.username  ]]
-  )
 
 (compilation-unit
   ; metadata
@@ -199,16 +186,16 @@
 
   (class-decl #{:public} Play
 
-   ( 'implements EntryPoint )
+    ( 'implements EntryPoint )
 
     ( 'field #{:private :static :final} String (SERVER_ERROR "D'oh!") )
     ( 'field #{:private :static :final} String (JSON_URL "http://127.0.0.1:8888/ststream.json") )
 
     ( 'field #{:private :final} GreetingServiceAsync ( greetingService ('gwt-new GreetingService) ) )
 
-    ;( 'gwt-native-method #{:private :final :native} StStreamResponse streamResponse [( String json )]
-    ;    "return eval(json);"
-    ;    )
+    ( 'gwt-native-method #{:private :final :native} StStreamResponse streamResponse [( String json )]
+        "return eval(json);"
+        )
 
     ( 'gwt-native-method #{:private :final :native} JsArray<StMessage> getMessages [( String json )]
         "return eval(\"(\" +json + \")\").messages;"
@@ -234,6 +221,7 @@
       ( '. dialogBox setAnimationEnabled true )
 
       ( 'button closeButton )
+      ( '. closeButton setText "Fuck this" )
 
       ( '. ( '. closeButton getElement ) setId "closeButton" )
 
@@ -243,13 +231,18 @@
       ( 'local #{} VerticalPanel ( dialogVPanel ( 'new VerticalPanel )) )
 
       ( 'panelfy dialogVPanel
+        ('h-align right)
         ;:#domidforpanel
         :.dialogVPanel
-        "<b>My super sweet html blob</b>"
+        "<b>My super dumb html blob</b>"
         textToServerLabel
         "<br><b> Server replies: </b>"
         serverResponseLabel
-        ('h-align right))
+        closeButton
+        )
+
+      ; FIXME bad perc syntax still causes infinite recursion...
+      ;('tawrongle Lila)
 
       ( 'set-widget dialogBox dialogVPanel )
 
@@ -262,7 +255,7 @@
         ( 'implements ClickHandler KeyUpHandler )
 
         ( 'on-click
-            ;( '. this sendNameToServer )
+            ( '. this sendNameToServer )
             ( '. this doSomeCrazyShit)
             ( 'log "My balls are on fire" )
             )
@@ -287,10 +280,7 @@
                                                      ( 'log responseText )
                                                      ( 'local #{} JsArray<StMessage> (calamity ('. nil getMessages responseText )))
                                                      ( 'log
-                                                         ('.
-                                                            ('. calamity get 0 )
-                                                            jsbody)
-                                                         )
+                                                         ('.  ('. calamity get 0 ) jsbody))
                                                      
                                                      )
                                                     (('log "MEGAFAIL")))))))))
@@ -334,12 +324,16 @@
       ( '. sendButton addClickHandler handler )
       ( '. nameField addKeyUpHandler handler )
 
-  )))
+  )
+))
 
 
-;(doseq [x (map #( .toString (eval ( interpret-body-decl % ) )) '(
-;                              ;( '+ ( '- 5 7 ) 2 )
-;                              ;( 'add somepanel ( '. somewhere getAWidget ) )
-;  ( 'field #{:private :static :final} String (SERVER_ERROR "D'oo!") )
-;  ( 'method #{:public} void onFailure [(Throwable e)] ( 'return 3))
-;                              ))] ( println x ))
+(jsni-proxy
+  com.whatsys.client StMessage
+  [[ int id ] [ String body ] [ String created_at ] ]
+  )
+
+(jsni-proxy
+  com.whatsys.client StStreamResponse
+  [[ int id ] [ String body ] [ String created_at ] [ String user.username  ]]
+  )

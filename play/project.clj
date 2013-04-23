@@ -6,6 +6,7 @@
                  [percolator/percolator                 "1.0.0-SNAPSHOT" ]
                  [com.google.gwt/gwt-user               "2.5.1" ]
                  [com.google.gwt/gwt-dev                "2.5.1" ]
+                 [storm/jgrapht                         "0.8.3"]
                  ]
   :gwt-modules ["com.whatsys.Play"]
   :gwt-options {:localWorkers 1

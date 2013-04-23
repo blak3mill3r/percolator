@@ -60,10 +60,10 @@
          ~body-block))))
 
 (defn interpret-body-decl-ctor [modifiers-and-annotations method-name param-list & body]
-  (let [ explicit-empty-body? (and body
-                          (seq? body)
-                          (= (.toString (last (first body) ) ) "empty"))
-         body-block (if explicit-empty-body?
+  (let [ ;explicit-empty-body? (and body
+         ;                 (seq? body)
+         ;                 (= (.toString (last (first body) ) ) "empty"))
+         body-block (if (not body);explicit-empty-body?
                       (interpret-block [])
                       (when-not (empty? body)
                         (interpret-block body)))

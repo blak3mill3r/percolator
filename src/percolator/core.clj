@@ -10,6 +10,10 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
   (:use [clojure.java.io :only (file writer)])
   (:require [clojure.string :as string ])
   (:import
+    (org.jgrapht.alg CycleDetector) ; FIXME use this!
+    (org.jgrapht DirectedGraph)
+    (org.jgrapht.graph DefaultDirectedGraph
+                       ClassBasedEdgeFactory )
     (japa.parser.ast.body AnnotationDeclaration 
                           AnnotationMemberDeclaration 
                           JavadocComment
@@ -126,7 +130,6 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
         :metadata ~metadata
        })))
 
-
 (defmacro class-decl [& args]
   (apply interpret-body-decl-class args))
 
@@ -161,8 +164,6 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
           ".java" ])
         (throw (Throwable. "badcuvar"))))) ; FIXME use slingshot
 
-
-
 ; write a single percolator cu to the given path
 (defn write-cu-to-path [cu path]
   (let [{:keys [ast metadata]} cu]
@@ -181,10 +182,14 @@ vomit-class-decl return-false add-two-to-s compilation-unit definterpreter inter
 ; write .java files for all the percolator compilation units defined in cu-namespace
 (defn write-all-cus-to-path [cu-namespace path]
   (doseq [cu (compilation-units-in-namespace cu-namespace) ]
-    (try
-      (write-cu-to-path @(ns-resolve cu-namespace cu ) path)
-      (catch Throwable e
-        (if (re-find #"badcuvar" (.toString e))
-          (do
-            (println "clearing 1 broken compilation unit var")
-            (ns-unmap (find-ns cu-namespace) cu)))))))
+    (do
+      (println "write cu " cu " to " path)
+      (try
+        (write-cu-to-path @(ns-resolve cu-namespace cu ) path)
+        (catch Throwable e
+          (if (re-find #"badcuvar" (.toString e))
+            (do
+              (println "clearing 1 broken compilation unit var")
+              (ns-unmap (find-ns cu-namespace) cu)))
+          (throw e)
+          )) )))

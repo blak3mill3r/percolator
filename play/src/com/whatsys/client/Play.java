@@ -31,6 +31,7 @@ public class Play implements EntryPoint {
     private static final String JSON_URL = "http://127.0.0.1:8888/ststream.json";
 
     private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
+    private final native StStreamResponse streamResponse(String json) /*-{return eval(json);}-*/;
     private final native JsArray<StMessage> getMessages(String json) /*-{return eval("(" +json + ")").messages;}-*/;
 
     public void onModuleLoad() {
@@ -48,17 +49,19 @@ public class Play implements EntryPoint {
         dialogBox.setText("RPC");
         dialogBox.setAnimationEnabled(true);
         final Button closeButton = new Button();
+        closeButton.setText("Fuck this");
         closeButton.getElement().setId("closeButton");
         final Label textToServerLabel = new Label();
         final HTML serverResponseLabel = new HTML();
         VerticalPanel dialogVPanel = new VerticalPanel();
         {
+            dialogVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
             dialogVPanel.addStyleName("dialogVPanel");
-            dialogVPanel.add(new HTML("<b>My super sweet html blob</b>"));
+            dialogVPanel.add(new HTML("<b>My super dumb html blob</b>"));
             dialogVPanel.add(textToServerLabel);
             dialogVPanel.add(new HTML("<br><b> Server replies: </b>"));
             dialogVPanel.add(serverResponseLabel);
-            dialogVPanel.setHorizontalAlignment(VerticalPanel.ALIGN_RIGHT);
+            dialogVPanel.add(closeButton);
         }
         dialogBox.setWidget(dialogVPanel);
         closeButton.addClickHandler(new ClickHandler() {
@@ -72,6 +75,7 @@ public class Play implements EntryPoint {
         class MyHandler implements ClickHandler, KeyUpHandler {
 
             public void onClick(ClickEvent e) {
+                this.sendNameToServer();
                 this.doSomeCrazyShit();
                 GWT.log("My balls are on fire");
             }

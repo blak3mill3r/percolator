@@ -7,6 +7,9 @@
 (defn interpret-block [stmt-list]
   `(new BlockStmt [ ~@(map interpret-statement stmt-list) ] ))
 
+(defn interpret-raw-block [stmt-list]
+  `(new BlockStmt [ ~@stmt-list ] ))
+
 (defn interpret-statement-return [& expression]
   (if (= nil (first expression))
     `(new japa.parser.ast.stmt.ReturnStmt)
@@ -70,6 +73,8 @@
 
 (defn interpret-statement-block [& s] (interpret-block s))
 
+(defn interpret-statement-raw-block [& s] (interpret-raw-block s))
+
 (defn interpret-catch-clause [cl]
   (let [ parameter (first cl)
        catch-block (rest cl) ]
@@ -102,6 +107,7 @@
     'class    interpret-statement-decl-class
     ; just a code block ... (aka anonymous scope)
     'block    interpret-statement-block
+    'raw-block    interpret-statement-raw-block
     'empty    (interpreter [] `(new EmptyStmt))
     'try      interpret-statement-try
    })
