@@ -1,4 +1,5 @@
 # percolator
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/blak3mill3r/percolator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## Warning
 This works, but is still quite experimental. It may change radically. Comments are welcome.
